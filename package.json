@@ -1,0 +1,21 @@
+{
+  "name": "netto-helper",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Dutch income and toeslagen explained: what you actually keep from your salary, and why.",
+  "type": "module",
+  "//scripts": "Tools are started with node directly, because group policy on Amir's work laptop blocks the .cmd shims in node_modules/.bin.",
+  "scripts": {
+    "dev": "node node_modules/vite/bin/vite.js",
+    "build": "node node_modules/typescript/bin/tsc --noEmit && node node_modules/vite/bin/vite.js build",
+    "preview": "node node_modules/vite/bin/vite.js preview",
+    "test": "node node_modules/vitest/vitest.mjs run",
+    "test:watch": "node node_modules/vitest/vitest.mjs",
+    "typecheck": "node node_modules/typescript/bin/tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vite": "^8.3.1",
+    "vitest": "^5.0.2"
+  }
+}

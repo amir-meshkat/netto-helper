@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Household bruto to netto 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EDF0EE; --surface:#FFFFFF; --ink:#16252F; --muted:#5B6B73; --line:#D3DAD6;
+  --accent:#0E6B68; --accent-soft:#DCEDEB; --netto:#D9A21B; --tax:#B04A5A; --pension:#7A8C99;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121A1E; --surface:#1A2429; --ink:#E6ECEA; --muted:#93A3A8; --line:#2C3A40;
+    --accent:#3FB2AC; --accent-soft:#1D3534; --netto:#E7B93C; --tax:#D46C7B; --pension:#8FA0AC;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121A1E; --surface:#1A2429; --ink:#E6ECEA; --muted:#93A3A8; --line:#2C3A40;
+  --accent:#3FB2AC; --accent-soft:#1D3534; --netto:#E7B93C; --tax:#D46C7B; --pension:#8FA0AC;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Schibsted Grotesk",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  font-size:16px;line-height:1.5;font-variant-numeric:tabular-nums}
+.wrap{max-width:1120px;margin:0 auto;padding:28px 20px 60px}
+header h1{font-size:clamp(1.8rem,4vw,2.6rem);line-height:1.1;margin:0 0 10px;font-weight:800;letter-spacing:-0.02em;max-width:18ch}
+header p{margin:0;color:var(--muted);max-width:62ch}
+.grid{display:grid;gap:24px;margin-top:28px}
+@media (min-width:920px){.grid{grid-template-columns:minmax(0,1fr) minmax(0,1.05fr)}.results{position:sticky;top:calc(16px + env(safe-area-inset-top,0px));align-self:start}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px}
+h2{font-size:1.05rem;margin:0 0 12px;font-weight:700}
+.scen{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.scen button{font:inherit;text-align:left;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;line-height:1.3}
+.scen button small{display:block;color:var(--muted);font-size:.8rem}
+.scen button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.scen button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.person{margin-top:22px;padding-top:18px;border-top:1px solid var(--line)}
+.person>h3{margin:0 0 10px;font-size:1rem;display:flex;align-items:center;gap:8px}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block}
+.person:nth-of-type(2) .dot{background:var(--netto)}
+.job{border:1px dashed var(--line);border-radius:10px;padding:12px;margin-top:10px}
+.job .jt{font-weight:600;font-size:.92rem;margin-bottom:8px}
+.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 12px}
+.fields .wide{grid-column:1/-1}
+label{display:block;font-size:.84rem;color:var(--muted)}
+label span.nl{font-style:italic}
+input[type=number]{width:100%;font:inherit;font-size:1rem;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-top:3px}
+.hint{font-size:.8rem;color:var(--muted);margin:8px 0 0}
+.total{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px}
+.total .big{font-size:clamp(2rem,5vw,2.8rem);font-weight:800;letter-spacing:-0.02em;line-height:1}
+.total .per{color:var(--muted)}
+.bar{display:flex;height:22px;border-radius:6px;overflow:hidden;margin:14px 0 8px;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .n{background:var(--netto)} .bar .t{background:var(--tax)} .bar .p{background:var(--pension)}
+.legend{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:.84rem;color:var(--muted)}
+.legend b{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.pres{margin-top:22px;padding-top:18px;border-top:1px solid var(--line)}
+.pres h3{margin:0 0 4px;font-size:1rem}
+.tbl{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.92rem}
+td{padding:5px 0;border-bottom:1px solid var(--line);vertical-align:top}
+td:last-child{text-align:right;white-space:nowrap;padding-left:12px}
+tr.sub td{color:var(--muted);font-size:.86rem;padding-left:12px}
+tr.sum td{font-weight:700;border-bottom:2px solid var(--ink)}
+tr.minus td:last-child{color:var(--accent)}
+.marg{margin-top:10px;font-size:.9rem;background:var(--accent-soft);border-radius:8px;padding:8px 12px}
+details{margin-top:10px}
+summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:.92rem}
+details ol{padding-left:20px;font-size:.88rem;color:var(--muted)}
+details li{margin:4px 0}
+.notes{margin-top:24px}
+.notes p{margin:0 0 10px;color:var(--muted);font-size:.9rem;max-width:75ch}
+.notes strong{color:var(--ink)}
+@media (prefers-reduced-motion:no-preference){.bar i{transition:width .35s ease}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>From bruto to netto for your household, 2026</h1>
+    <p>Pick a situation, type the gross monthly salary of each job, and see what the household keeps after pension and income tax. Figures are for a full year of 2026, for people below AOW age.</p>
+  </header>
+
+  <div class="grid">
+    <section class="panel" aria-labelledby="in-h">
+      <h2 id="in-h">Situation</h2>
+      <div class="scen" id="scen" role="group" aria-label="Choose a situation"></div>
+      <div id="people"></div>
+      <p class="hint">Pension: every employer has its own pension scheme. Find your own premium percentage and the franchise (the part of your salary with no pension build-up) in your pension regulation or on your payslip, and enter them per job. Leave them at 0 to ignore pension.</p>
+    </section>
+
+    <section class="panel results" aria-live="polite" aria-labelledby="out-h">
+      <h2 id="out-h">Household netto</h2>
+      <div id="out"></div>
+    </section>
+  </div>
+
+  <section class="notes">
+    <p><strong>Two jobs.</strong> During the year only one employer applies the loonheffingskorting (the tax credits), so the second job withholds more tax per month. What you see here is the final yearly result, as it would come out of your aangifte. The difference between monthly withholding and this result is settled afterwards, or earlier through a voorlopige aanslag.</p>
+    <p><strong>Couples.</strong> Salaries are taxed per person. Being fiscal partners does not change the numbers here; it starts to matter for shared items such as mortgage interest, savings in box 3, and deductions.</p>
+    <p><strong>Not included yet.</strong> Toeslagen, mortgage interest and other deductions, box 3 savings, lijfrente, bonuses with special rates, and anyone at AOW age. The employer pays the Zvw health contribution, so it is not taken from your salary. Indicative only, rounding can differ a few euros from the Belastingdienst.</p>
+  </section>
+</div>
+
+<script>
+/* Yearly rules live in one object, so a new year means new data, not new code. */
+const RULES = {
+  2026: {
+    brackets: [
+      { upTo: 38883, rate: 0.3575 },
+      { upTo: 78426, rate: 0.3756 },
+      { upTo: Infinity, rate: 0.4950 }
+    ],
+    ahk: { max: 3115, start: 29736, rate: 0.06398 },
+    ak: [
+      { from: 0,     upTo: 11965,    base: 0,    rate: 0.08324 },
+      { from: 11965, upTo: 25845,    base: 996,  rate: 0.31009 },
+      { from: 25845, upTo: 45592,    base: 5300, rate: 0.01950 },
+      { from: 45592, upTo: Infinity, base: 5685, rate: -0.06510 }
+    ]
+  }
+};
+const R = RULES[2026];
+
+const SCENARIOS = [
+  { id: "1-1", title: "One person", sub: "one job", shape: [1] },
+  { id: "1-2", title: "One person", sub: "two jobs", shape: [2] },
+  { id: "2-11", title: "Two people", sub: "one job each", shape: [1, 1] },
+  { id: "2-12", title: "Two people", sub: "one job and two jobs", shape: [1, 2] }
+];
+const DEFAULT_JOBS = [[3500, 1200], [2800, 900]];
+
+const newJob = (monthly) => ({ monthly, holiday: 8, extra: 0, pension: 0, franchise: 0 });
+
+let state = { scenario: "1-1", people: [[newJob(3500)]] };
+try {
+  const saved = JSON.parse(localStorage.getItem("bn2026") || "null");
+  if (saved && saved.people && saved.scenario) state = saved;
+} catch (e) {}
+
+function save(){ try { localStorage.setItem("bn2026", JSON.stringify(state)); } catch (e) {} }
+
+function applyScenario(id){
+  const sc = SCENARIOS.find(s => s.id === id);
+  state.scenario = id;
+  state.people = sc.shape.map((n, pi) => {
+    const old = state.people[pi] || [];
+    return Array.from({ length: n }, (_, ji) => old[ji] || newJob(DEFAULT_JOBS[pi][ji]));
+  });
+}
+
+/* ---------- calculation ---------- */
+function box1(income){
+  let prev = 0, rows = [], total = 0;
+  for (const b of R.brackets){
+    const part = Math.max(0, Math.min(income, b.upTo) - prev);
+    rows.push({ from: prev, upTo: b.upTo, rate: b.rate, part, tax: part * b.rate });
+    total += part * b.rate;
+    prev = b.upTo;
+    if (income <= b.upTo) break;
+  }
+  return { rows, total };
+}
+function ahk(income){
+  return Math.max(0, R.ahk.max - Math.max(0, income - R.ahk.start) * R.ahk.rate);
+}
+function ak(work){
+  for (const s of R.ak) if (work <= s.upTo) return Math.max(0, s.base + s.rate * (work - s.from));
+  return 0;
+}
+function calcPerson(jobs, extraGross = 0){
+  let gross = 0, pension = 0;
+  const jobRows = jobs.map((j, i) => {
+    const year = (+j.monthly || 0) * 12;
+    const g = year * (1 + ((+j.holiday || 0) + (+j.extra || 0)) / 100) + (i === 0 ? extraGross : 0);
+    const p = Math.max(0, g - (+j.franchise || 0)) * (+j.pension || 0) / 100;
+    gross += g; pension += p;
+    return { g, p };
+  });
+  const taxable = gross - pension;
+  const b = box1(taxable);
+  const kAhk = ahk(taxable), kAk = ak(taxable);
+  const credits = Math.min(b.total, kAhk + kAk);
+  const tax = b.total - credits;
+  const netto = gross - pension - tax;
+  return { jobRows, gross, pension, taxable, box1: b, kAhk, kAk, credits, tax, netto };
+}
+
+/* ---------- rendering ---------- */
+const eur = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+const pct = (x) => (x * 100).toLocaleString("nl-NL", { maximumFractionDigits: 2 }) + "%";
+
+function renderScenarios(){
+  const el = document.getElementById("scen");
+  el.innerHTML = SCENARIOS.map(s =>
+    `<button type="button" data-id="${s.id}" aria-pressed="${s.id === state.scenario}">${s.title}<small>${s.sub}</small></button>`
+  ).join("");
+  el.querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
+    applyScenario(b.dataset.id); renderScenarios(); renderInputs(); renderResults(); save();
+  }));
+}
+
+function field(pi, ji, key, label, nl, step, wide){
+  const v = state.people[pi][ji][key];
+  return `<label class="${wide ? "wide" : ""}">${label} <span class="nl">(${nl})</span>
+    <input type="number" inputmode="decimal" min="0" step="${step}" value="${v}" data-p="${pi}" data-j="${ji}" data-k="${key}"></label>`;
+}
+
+function renderInputs(){
+  const el = document.getElementById("people");
+  el.innerHTML = state.people.map((jobs, pi) => `
+    <div class="person">
+      <h3><span class="dot"></span>Person ${pi === 0 ? "A" : "B"}</h3>
+      ${jobs.map((_, ji) => `
+        <div class="job">
+          ${jobs.length > 1 ? `<div class="jt">Job ${ji + 1}</div>` : ""}
+          <div class="fields">
+            ${field(pi, ji, "monthly", "Gross salary per month", "bruto maandloon", 50, true)}
+            ${field(pi, ji, "holiday", "Holiday pay %", "vakantiegeld", 0.5)}
+            ${field(pi, ji, "extra", "Year-end bonus %", "eindejaarsuitkering", 0.5)}
+            ${field(pi, ji, "pension", "Your pension premium %", "werknemersdeel", 0.1)}
+            ${field(pi, ji, "franchise", "Pension franchise per year", "franchise", 100)}
+          </div>
+        </div>`).join("")}
+    </div>`).join("");
+  el.querySelectorAll("input").forEach(inp => inp.addEventListener("input", () => {
+    state.people[+inp.dataset.p][+inp.dataset.j][inp.dataset.k] = inp.value === "" ? 0 : +inp.value;
+    renderResults(); save();
+  }));
+}
+
+function bar(pension, tax, netto){
+  const t = pension + tax + netto || 1;
+  return `<div class="bar" role="img" aria-label="Netto ${eur.format(netto)}, tax ${eur.format(tax)}, pension ${eur.format(pension)}">
+    <i class="n" style="width:${netto / t * 100}%"></i><i class="t" style="width:${tax / t * 100}%"></i><i class="p" style="width:${pension / t * 100}%"></i></div>`;
+}
+
+function personBlock(r, pi, jobsCount){
+  const name = pi === 0 ? "A" : "B";
+  const plus = calcPerson(state.people[pi], 1000);
+  const marginal = 1 - (plus.netto - r.netto) / 1000;
+  const jobLines = jobsCount > 1
+    ? r.jobRows.map((j, i) => `<tr class="sub"><td>Job ${i + 1}</td><td>${eur.format(j.g)}</td></tr>`).join("") : "";
+  const brRows = r.box1.rows.filter(x => x.part > 0).map(x =>
+    `<tr class="sub"><td>${pct(x.rate)} over ${eur.format(x.part)}</td><td>${eur.format(x.tax)}</td></tr>`).join("");
+  return `
+  <div class="pres">
+    <h3>Person ${name}</h3>
+    ${bar(r.pension, r.tax, r.netto)}
+    <div class="tbl"><table>
+      <tr><td>Gross per year, incl. holiday pay</td><td>${eur.format(r.gross)}</td></tr>
+      ${jobLines}
+      <tr class="minus"><td>Pension premium you pay</td><td>&minus; ${eur.format(r.pension)}</td></tr>
+      <tr class="sum"><td>Taxable income (belastbaar inkomen box 1)</td><td>${eur.format(r.taxable)}</td></tr>
+      <tr><td>Tax and national insurance, by bracket</td><td>${eur.format(r.box1.total)}</td></tr>
+      ${brRows}
+      <tr class="minus"><td>General tax credit (algemene heffingskorting)</td><td>&minus; ${eur.format(r.kAhk)}</td></tr>
+      <tr class="minus"><td>Labour tax credit (arbeidskorting)</td><td>&minus; ${eur.format(r.kAk)}</td></tr>
+      <tr class="sum"><td>Income tax to pay</td><td>${eur.format(r.tax)}</td></tr>
+      <tr class="sum"><td>Netto per year</td><td>${eur.format(r.netto)}</td></tr>
+      <tr><td>Netto per month, averaged</td><td>${eur.format(r.netto / 12)}</td></tr>
+    </table></div>
+    <div class="marg">Of the next €1,000 gross, ${name} keeps about ${eur.format(1000 * (1 - marginal))}. That is a marginal rate of ${pct(marginal)}.</div>
+    <details>
+      <summary>Show the calculation</summary>
+      <ol>
+        <li>Gross: monthly salary × 12, plus holiday pay and year-end bonus percentages.</li>
+        <li>Pension: (gross − franchise) × your premium %. It is taken off before tax, so it lowers your tax too.</li>
+        <li>Box 1 tax: 35,75% up to €38.883, 37,56% up to €78.426, 49,50% above. These rates include AOW, Anw and Wlz premiums.</li>
+        <li>General credit: €3.115, reduced by 6,398% of income above €29.736 (now ${eur.format(r.kAhk)}).</li>
+        <li>Labour credit: builds up to €5.685 at €45.592, then reduced by 6,51% of income above that (now ${eur.format(r.kAk)}).</li>
+        <li>Credits can not be more than the tax itself. Tax to pay = box 1 tax − credits.</li>
+      </ol>
+    </details>
+  </div>`;
+}
+
+function renderResults(){
+  const results = state.people.map(jobs => calcPerson(jobs));
+  const sum = (k) => results.reduce((a, r) => a + r[k], 0);
+  const netto = sum("netto"), tax = sum("tax"), pension = sum("pension"), gross = sum("gross");
+  document.getElementById("out").innerHTML = `
+    <div class="total"><span class="big">${eur.format(netto / 12)}</span><span class="per">per month on average, ${eur.format(netto)} per year</span></div>
+    ${bar(pension, tax, netto)}
+    <div class="legend">
+      <span><b style="background:var(--netto)"></b>Netto ${gross ? pct(netto / gross) : "0%"}</span>
+      <span><b style="background:var(--tax)"></b>Income tax ${gross ? pct(tax / gross) : "0%"}</span>
+      <span><b style="background:var(--pension)"></b>Pension ${gross ? pct(pension / gross) : "0%"}</span>
+    </div>
+    ${results.map((r, pi) => personBlock(r, pi, state.people[pi].length)).join("")}`;
+}
+
+renderScenarios(); renderInputs(); renderResults();
+</script>
+</body>
+</html>
