@@ -1,14 +1,18 @@
 # Toeslagen 2026: research draft
 
-**Status: draft, 26 September 2026. Not verified. Do not build from these numbers yet.**
+**Status: partly verified, 26 September 2026.** Zorgtoeslag and kindgebonden budget are verified and their rules are in CLAUDE.md ("Toeslagen 2026"). Huurtoeslag and kinderopvangtoeslag are only partly verified: do not build them from this file yet.
 
-The cloud environment could not reach the official sites (belastingdienst.nl, rijksoverheid.nl, wetten.overheid.nl, eerstekamer.nl): its network policy blocks them. Everything below comes from web search summaries of official and third party pages. Every figure still has to be read on the official page. Once checked, the rules move into CLAUDE.md like the tax rules, and this file records what was checked where.
+The cloud environment cannot reach the official sites (belastingdienst.nl, rijksoverheid.nl, wetten.overheid.nl, eerstekamer.nl): its network policy blocks them. The first draft came from web search summaries. Amir then shared the official **Toeslagenkaart 2026** (Dienst Toeslagen, November 2025, TG 710-1Z61PL); a copy is in `sources/toeslagenkaart-2026.pdf`. It confirmed most figures and corrected three.
 
 Status per figure:
 
-- **Consistent**: several summaries agree, and where possible the numbers also agree with each other through the formula. Very likely right, still to be read on the official page.
-- **Conflicting**: summaries disagree, or one looks like an older year. Must be read on the official page.
+- **Verified (card)**: read on the Toeslagenkaart 2026.
+- **Verified (calculation)**: not printed on the card, but it reproduces figures on the card to the euro.
+- **Consistent**: several summaries agree, and where possible the numbers also agree with each other through the formula. Still to be read on an official page.
+- **Conflicting**: summaries disagree, or one looks like an older year. Must be read on an official page.
 - **Missing**: not found yet.
+
+Corrected by the card: the kindgebonden budget extras for a child aged 12 to 15 (€724, not €703) and 16 or 17 (€964, not €936), and the alleenstaande-ouderkop (€3,416, not €3,320).
 
 ## What all toeslagen share
 
@@ -29,16 +33,16 @@ Status per figure:
 
 | Parameter | 2026 | Status |
 |---|---|---|
-| Standaardpremie | €2,119 a year | Consistent |
-| Drempelinkomen | €29,736 | Consistent (the same figure as where the algemene heffingskorting starts to shrink, as in 2025) |
-| Normpremie alone | 1.912% of drempelinkomen | Consistent (one source, but it gives exactly the reported maximum) |
-| Normpremie with partner | 4.289% of drempelinkomen | Consistent (same) |
-| Above the drempelinkomen | 13.730% of the income above it | Consistent (same) |
-| Income limit alone | €40,857 | Consistent |
-| Income limit with partner | €51,142 | Consistent |
-| Vermogen limit alone | €146,011 | Consistent |
-| Vermogen limit with partner | €184,633 | Consistent |
-| Maximum | €129 a month alone, about €247 with partner | Consistent (the formula gives €129.20 and €246.89; one source says €246) |
+| Standaardpremie | €2,119 a year | Verified (calculation), and in Staatscourant results found by search |
+| Drempelinkomen | €29,736 | Verified (card: the same figure is the kindgebonden budget threshold), and in Staatscourant results |
+| Normpremie alone | 1.912% of drempelinkomen | Verified (calculation): gives the card's €1,550 |
+| Normpremie with partner | 4.289% of drempelinkomen | Verified (calculation): gives the card's €2,963 |
+| Above the drempelinkomen | 13.730% of the income above it | Consistent, and in Staatscourant results found by search |
+| Income limit alone | €40,857 | Verified (card) |
+| Income limit with partner | €51,142 | Verified (card) |
+| Vermogen limit alone | €146,011 | Verified (card) |
+| Vermogen limit with partner | €184,633 | Verified (card) |
+| Maximum | €1,550 a year alone (€129 a month), €2,963 with partner (€247 a month) | Verified (card) |
 
 **Worked examples** (checked with a script, using the numbers above):
 
@@ -58,14 +62,14 @@ Status per figure:
 
 | Parameter | 2026 | Status |
 |---|---|---|
-| Per child | €2,580 a year | Consistent |
-| Child aged 12 to 15 | €3,283 a year in total (so €703 extra) | Consistent |
-| Child aged 16 or 17 | €3,516 a year in total (so €936 extra) | Consistent |
-| Alleenstaande-ouderkop | €3,320, or €3,416 | **Conflicting**: one source says €3,320 but also "€5,996 for a single parent with one child", which implies €3,416 |
-| Drempel alone | €29,736 | Consistent |
-| Drempel with partner | €39,141 | Consistent |
-| Afbouw | 7.60% of income above the drempel | Consistent (2025 was lower, check) |
-| Vermogen limits | €146,011 alone, €184,633 with partner | Consistent (the same as zorgtoeslag) |
+| Per child | €2,580 a year | Verified (card) |
+| Child aged 12 to 15 | €724 extra a year | Verified (card); search said €703 |
+| Child aged 16 or 17 | €964 extra a year | Verified (card); search said €936 |
+| Alleenstaande-ouderkop | €3,416 a year | Verified (card: single parent with one child €5,996 = €2,580 + €3,416; two children €8,576) |
+| Drempel alone | €29,736 | Verified (card) |
+| Drempel with partner | €39,141 | Verified (card) |
+| Afbouw | 7.60% of income above the drempel | Verified (card) |
+| Vermogen limits | €146,011 alone, €184,633 with partner | Verified (card) |
 
 **New inputs needed:** children and their ages. "Single parent" follows from having no partner on the site. Kinderbijslag (from the SVB) does not depend on income, so it does not change "the next €100"; it could be an optional extra line later.
 
@@ -81,15 +85,16 @@ Status per figure:
 
 | Parameter | 2026 | Status |
 |---|---|---|
-| Maximum rent in the calculation | €932.93 a month | Consistent |
-| Maximum rent for young people (18 to 20) | €498.20 | **Conflicting** (unclear which age group and which limit) |
+| Maximum rent in the calculation (rekengrens) | €932.93 a month when someone is 21 or older, or a child lives there | Verified (card) |
+| Rekengrens when everyone is 18, 19 or 20 | €498.20 | Verified (card) |
+| Income of a child under 23 living at home | the first €6,218 does not count | Verified (card) |
 | Basishuur | €202.52 alone, €200.71 for more people | Consistent (possibly one source copied by another) |
-| Kwaliteitskortingsgrens | €498.20 or €454.47 | **Conflicting** (€454.47 looks like the 2024 figure) |
+| Kwaliteitskortingsgrens | €454.47, or unknown | **Conflicting** (€454.47 looks like the 2024 figure; the €498.20 some sources gave is the rekengrens for young households) |
 | Aftoppingsgrens, 1 or 2 people | €713.02, €650.43 or €648.21 | **Conflicting** (€650.43 looks like 2024) |
 | Aftoppingsgrens, 3 or more people | €764.14, €697.07 or €694.56 | **Conflicting** (€697.07 looks like 2024) |
 | Income point where the afbouw starts | €23,425 alone, €31,500 for more people | Consistent in two summaries, verify |
 | Afbouw percentage | 27% alone, 22% for more people | **Missing** a clear source, and unclear whether per year or per month |
-| Vermogen limit | €38,479 per person | One source, verify |
+| Vermogen limit | €38,479 alone, €76,958 with partner, €38,479 per other resident | Verified (card) |
 
 **New inputs needed:** bare rent per month, and the number of people in the home (partner and children follow from the page). Possibly age under 21 or 23.
 
@@ -101,9 +106,9 @@ This is the toeslag where the summaries were least reliable. It needs the offici
 
 | Parameter | 2026 | Status |
 |---|---|---|
-| Maximum hourly price, dagopvang | €11.23 | Consistent |
-| Maximum hourly price, buitenschoolse opvang | €9.98 | Consistent |
-| Maximum hourly price, gastouderopvang | €8.49 | Consistent |
+| Maximum hourly price, dagopvang | €11.23 | Verified (card) |
+| Maximum hourly price, buitenschoolse opvang | €9.98 | Verified (card) |
+| Maximum hourly price, gastouderopvang | €8.49, for dagopvang and buitenschoolse opvang | Verified (card) |
 | Maximum hours | 230 a month per child | Consistent |
 | 96% for both first and next children | up to about €56,412 combined income | **Conflicting** by €1 (€56,412 or €56,413) |
 | Lowest percentage, first child | 36.5% | Consistent in two summaries; the income where it starts is **conflicting** (€165,658 or €235,689) |
@@ -114,7 +119,14 @@ This is the toeslag where the summaries were least reliable. It needs the offici
 
 ## What this means for "the next €100"
 
-For someone alone at €38,880: income tax leaves €59.80 of the next €100, zorgtoeslag takes €13.73 of it, so €46.07 is left. With children, kindgebonden budget takes another €7.60. With huurtoeslag on top, the combined rate goes well above 50%, which is the 70 to 80% range CLAUDE.md warns about. The exact numbers wait for verification.
+For someone alone at €38,880: income tax leaves €59.80 of the next €100, zorgtoeslag takes €13.73 of it, so €46.07 is left. With children and above the €29,736 threshold, kindgebonden budget takes another €7.60, leaving €38.47. With huurtoeslag on top, the combined rate goes well above 50%, which is the 70 to 80% range CLAUDE.md warns about. The exact numbers wait for verification.
+
+## Still to verify
+
+- Huurtoeslag: basishuur, kwaliteitskortingsgrens, aftoppingsgrenzen, the income point and the afbouw percentage (the rekenregels huurtoeslag 2026).
+- Kinderopvangtoeslag: the percentage table per income, and the maximum of 230 hours.
+- Toetsingsinkomen: that it is the box 1 taxable income for the people this site covers.
+- The card also lists an "indexpercentage inkomen" of 4.39%. Dienst Toeslagen uses it to estimate income; the site does not need it.
 
 ## Official pages to read (once the network allows it)
 

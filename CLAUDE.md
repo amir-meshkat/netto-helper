@@ -28,7 +28,7 @@ Other principles:
 
 - Prefer euros over percentages. "Of the next €100 you keep €58" beats "marginal rate 42%".
 - Bust the myth "if I work more I end up with less". For income tax alone you always keep more in total, only less per extra euro. Show both at once: total netto (always grows) and "of the next €100" (grows and shrinks by zone).
-- Be honest about the exception: once toeslagen are added, the combined rate can reach 70 to 80%, and around a hard income limit (zorgtoeslag) earning a little more can leave you with less (the armoedeval). Show this when it happens, do not hide it.
+- Be honest about the exception: once toeslagen are added, the combined rate can reach 70 to 80%, and at a hard income limit earning a little more can leave you with less (the armoedeval). For zorgtoeslag in 2026 the hard limit is small (the last €24 a year stops at once); the bigger effect is the steady phase-out, 13.73% of every extra euro. Show this when it happens, do not hide it.
 - Label Dutch terms next to English ones, for example "General tax credit (algemene heffingskorting)". Later the site will be available in English, Dutch and Persian, so keep all UI text in a translation file from the start, and make layouts ready for right to left text (Persian).
 - Numbers can be typed or dragged. Every number input has a slider next to its text box, and the results update in real time while dragging (milestone 4). Income comes first.
 - Many parameters, all optional. Add every parameter that changes the answer for real people, but give each one a sensible default and keep it behind a "More details" toggle, like holiday pay and pension today. The answer shows before any of them is filled in.
@@ -84,7 +84,7 @@ src/
   ui/                shared: formatting, forgiving number input, sliders, job and side income forms, bars, 100 grid, line chart
 index.html           the page
 prototype/           bruto-netto-2026.html, the first single-file version. Reference only, not part of the build.
-docs/                research notes, such as toeslagen-2026.md (draft, not verified)
+docs/                research notes: toeslagen-2026.md (partly verified), sources/ (official documents, such as the Toeslagenkaart 2026)
 ```
 
 Tools are started with `node node_modules/...` in package.json, because group policy on Amir's laptop blocks the `.cmd` shims in node_modules/.bin. Use `npm test` and `npm run dev`, not `npx`.
@@ -165,6 +165,56 @@ Marginal rate zones (tax on the next euro, income tax only):
 
 Compute these from the rules, do not hard code them. The table is for testing.
 
+## Toeslagen 2026
+
+Source: the Toeslagenkaart 2026 (Dienst Toeslagen, November 2025, TG 710-1Z61PL), shared by Amir on 26 September 2026. A copy is in `docs/sources/toeslagenkaart-2026.pdf`, because cloud sessions cannot reach belastingdienst.nl. Figures that are not on the card say where they come from. Everything not yet verified stays in `docs/toeslagen-2026.md`.
+
+Shared by all toeslagen:
+
+- Toetsingsinkomen: the income of the whole year, added up for a person and their toeslagpartner. Our reading for this site (salary and zzp side income, no box 2 or 3): the sum of each person's box 1 taxable income from the engine. Not on the card; verify on the Dienst Toeslagen page about toetsingsinkomen.
+- Vermogen on 1 January above the limit: no toeslag at all.
+
+Zorgtoeslag:
+
+| Rule | 2026 | Source |
+|---|---|---|
+| Maximum income | €40,857 alone, €51,142 with toeslagpartner | card |
+| Maximum toeslag | €1,550 a year alone, €2,963 with toeslagpartner | card |
+| Maximum vermogen | €146,011 alone, €184,633 with toeslagpartner | card |
+| Standaardpremie | €2,119 a year | Staatscourant (via search), not on the card |
+| Drempelinkomen | €29,736 | Staatscourant (via search); the same figure as the kindgebonden budget threshold on the card |
+| Normpremie | 1.912% (alone) or 4.289% (with toeslagpartner) of the drempelinkomen, plus 13.730% of the income above it | 13.730% from the Staatscourant (via search); 1.912% and 4.289% reproduce the card's maximum toeslag to the euro |
+
+- Zorgtoeslag = standaardpremie (twice with a toeslagpartner) − normpremie, minimum 0, and 0 above the maximum income or vermogen.
+- Worked example: alone, €38,880: normpremie €568.55 + 13.73% × €9,144 = €1,824.02, so zorgtoeslag €294.98 a year (€24.58 a month). A couple where one earns €38,880 and the other nothing: €1,707.15 a year.
+- At the maximum income the formula still gives about €24 a year; one euro above it, nothing. That is the hard limit.
+
+Kindgebonden budget (all from the card):
+
+| Rule | 2026 |
+|---|---|
+| Per child | €2,580 a year |
+| Extra for a child aged 12 to 15 | €724 a year |
+| Extra for a child aged 16 or 17 | €964 a year |
+| Extra for a single parent (alleenstaande-ouderkop) | €3,416 a year (card: one child, single parent €5,996 = €2,580 + €3,416) |
+| Threshold | €29,736 alone, €39,141 with toeslagpartner |
+| Afbouw | 7.60% of the income above the threshold |
+| Maximum vermogen | €146,011 alone, €184,633 with toeslagpartner |
+
+- Kindgebonden budget = the total maximum − 7.60% × (toetsingsinkomen − threshold), minimum 0. That the 7.60% also reduces the alleenstaande-ouderkop is our reading; the card does not say.
+
+Huurtoeslag, only partly verified (rest in `docs/toeslagen-2026.md`):
+
+- Rekengrens: €932.93 a month when someone in the home is 21 or older, or a child lives there; €498.20 when everyone is 18, 19 or 20.
+- Income of a child under 23 living at home: the first €6,218 does not count.
+- Maximum vermogen: €38,479 alone, €76,958 with toeslagpartner, and €38,479 for every other resident.
+- Not on the card, and the sources disagree: basishuur, kwaliteitskortingsgrens, aftoppingsgrenzen, the income point and the afbouw percentage. Needed before building: the rekenregels huurtoeslag 2026.
+
+Kinderopvangtoeslag, only partly verified:
+
+- Maximum price per hour: dagopvang €11.23, buitenschoolse opvang €9.98, gastouderopvang (both) €8.49.
+- Not on the card: the percentage table per income and the maximum hours. Needed before building: the official table.
+
 ## Test cases (must pass)
 
 - One person, €36,000 taxable income: box 1 tax €12,870.00, general credit €2,714.23, labour credit €5,498.02, tax to pay €4,657.75, netto €31,342.25.
@@ -176,7 +226,7 @@ Compute these from the rules, do not hard code them. The table is for testing.
 
 ## Milestones
 
-Stop after each one for review. Status on 26 September 2026: 1 to 5 are done, 6 is dropped, 7 is in research: see `docs/toeslagen-2026.md`.
+Stop after each one for review. Status on 26 September 2026: 1 to 5 are done, 6 is dropped, 7 is in progress: rules for zorgtoeslag and kindgebonden budget verified, zorgtoeslag is next to build.
 
 The milestones were renumbered on 26 September 2026. Before that, the side income page was milestone 5, the "next €100" pages were 3 and 4, and 6 was the dropped payslip check.
 
@@ -191,7 +241,7 @@ The milestones were renumbered on 26 September 2026. Before that, the side incom
 
    Wide screens: inputs on the left, answers on the right. Each section gets a plain #anchor, so a link can point to one question. Saved inputs from the old pages carry over. The engine does not change. *Done:* the code is in `src/app/`. A person alone gets no heading or name field; names appear with a partner. The per-person card no longer repeats the set-aside note, the side income section has it. When both partners have side income there is nothing to compare, so the section shows each one's own and no chart. The old side income page's inputs carry over only when there are no household inputs, with the side income on the first person.
 6. ~~"Next €100" pages for one person and for a couple.~~ Dropped on 26 September 2026: with sliders and one page, dragging a salary already shows total netto growing and "of the next €100" changing for each partner. What is left, a chart across all incomes, moves to milestone 7.
-7. **Toeslagen.** Zorgtoeslag, huurtoeslag, kindgebonden budget and kinderopvangtoeslag on the combined household income. Every extra input is optional, with a sensible default: for example rent, children and their ages, childcare hours and costs, and savings for the asset test (vermogenstoets). Add "lost toeslag" as a third colour in the "next €100" bar, and show the armoedeval honestly where it occurs. Research the exact 2026 rules first, write them into this file like the tax rules above, and confirm them with Amir. Build one toeslag at a time, starting with zorgtoeslag because its hard income limit causes the armoedeval. Research so far: `docs/toeslagen-2026.md` (26 September 2026), a draft from web search summaries because the cloud environment could not reach belastingdienst.nl, rijksoverheid.nl or wetten.overheid.nl. Its numbers are not verified: read each one on the official page before moving it into this file or the code. Then add the "Is working more worth it?" section: a chart of "of the next €100" across all incomes, with the tax zones and lost toeslag in colour and a "you are here" dot for each partner.
+7. **Toeslagen.** Zorgtoeslag, huurtoeslag, kindgebonden budget and kinderopvangtoeslag on the combined household income. Every extra input is optional, with a sensible default: for example rent, children and their ages, childcare hours and costs, and savings for the asset test (vermogenstoets). Add "lost toeslag" as a third colour in the "next €100" bar, and show the armoedeval honestly where it occurs. Research the exact 2026 rules first, write them into this file like the tax rules above, and confirm them with Amir. Build one toeslag at a time, in this order (agreed with Amir on 26 September 2026): zorgtoeslag (no new inputs, and its 13.73% phase-out shows the effect on "the next €100" at once), kindgebonden budget, huurtoeslag, kinderopvangtoeslag. Verified rules are in "Toeslagen 2026" above; `docs/toeslagen-2026.md` has the rest, not verified: read each figure on an official page before moving it here or into the code. Then add the "Is working more worth it?" section: a chart of "of the next €100" across all incomes, with the tax zones and lost toeslag in colour and a "you are here" dot for each partner.
 8. **More optional parameters.** One at a time, add the items from "Not included" below that change the answer for many people, each as an optional input that is zero or off by default: mortgage (hypotheekrenteaftrek and eigenwoningforfait), a lijfrente what-if (a deposit lowers taxable income and the toetsingsinkomen for toeslagen), savings and investments in box 3, people at AOW age, special bonus rates, and for zzp'ers business losses, KOR and investment deductions. Explain each rule first, as always, and agree the order with Amir.
 
 Dropped: ~~payslip check for two jobs~~. Two employers are rare in practice, and the set-aside question for zzp side income is answered in the side income section. The engine keeps `withholding.ts`.
