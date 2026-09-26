@@ -41,7 +41,7 @@ Other principles:
 - Vite with TypeScript. One page, `index.html`: the tools are sections on it, all fed by one set of inputs (milestone 5).
 - No UI framework needed at the start. Plain TypeScript and CSS. Charts as hand-written SVG, or a small library such as Chart.js if needed.
 - Vitest for unit tests of the calculation engine.
-- Deployable as a static site (GitHub Pages or Netlify). Run locally with `npm run dev`.
+- A static site on GitHub Pages, published by `.github/workflows/deploy.yml` (see below). Run locally with `npm run dev`.
 
 If Amir prefers C# later, the engine is small enough to port. Keep it free of UI code so that is possible.
 
@@ -49,8 +49,9 @@ If Amir prefers C# later, the engine is small enough to port. Keep it free of UI
 
 - Work happens in Claude Code sessions in the cloud. That machine is temporary, so finished work only counts once it is pushed to GitHub: github.com/amir-meshkat/netto-helper.
 - Push straight to `main`, no pull requests (Amir's choice, 26 September 2026). Before every push, run `npm test`, `npm run typecheck` and `npm run build`, and push only when all three pass.
+- Live site: https://amir-meshkat.github.io/netto-helper/ (GitHub Pages, from 26 September 2026). Every push to `main` goes live: `.github/workflows/deploy.yml` runs the tests and the build (which includes the typecheck) and publishes `dist/`. A failing test stops the deploy. Pages is switched on in the repository settings with Source "GitHub Actions". The site is public: anything pushed to `main` is visible to everyone within minutes.
 - Amir gets the code on his laptop with `git pull`. `.claude/launch.json` starts the dev server there; it holds the Windows path to node.exe, so it only works on his laptop.
-- Preview: a private page at https://claude.ai/artifact/LBHZ7e7fuGpw1gD4fpX1yr, only visible to Amir until he shares it. Republish it after each milestone so he can try the page, also on his phone. Publish the output of `npm run build`: `dist/index.html` as the page itself, without its `<!doctype>`, `<html>`, `<head>` and `<body>` tags (the host adds its own), and every other file in `dist/` at its own path. From a new session, pass that URL to update the same page.
+- Preview: https://claude.ai/artifact/LBHZ7e7fuGpw1gD4fpX1yr, shared by link. Optional now that the site is live on GitHub Pages; republish it only when Amir asks. Publish the output of `npm run build`: `dist/index.html` as the page itself, without its `<!doctype>`, `<html>`, `<head>` and `<body>` tags (the host adds its own), and every other file in `dist/` at its own path. From a new session, pass that URL to update the same page.
 - Each section has a plain anchor (`#netto`, `#each-100`, `#people`, `#side-income`), so a link can open the page at one question. Keep anchors to letters, digits and hyphens: the preview host passes only plain anchors like these.
 
 ## Architecture
@@ -276,7 +277,7 @@ The milestones were renumbered on 26 September 2026. Before that, the side incom
 
 Dropped: ~~payslip check for two jobs~~. Two employers are rare in practice, and the set-aside question for zzp side income is answered in the side income section. The engine keeps `withholding.ts`.
 
-Later ideas, not now: Dutch and Persian translations, an explanation layer where an LLM explains results in plain language while the numbers always come from the engine, and a public site on GitHub Pages or Netlify.
+Later ideas, not now: Dutch and Persian translations, and an explanation layer where an LLM explains results in plain language while the numbers always come from the engine.
 
 ## Not included (show this on the page until added)
 
