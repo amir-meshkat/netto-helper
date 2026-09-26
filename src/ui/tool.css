@@ -1,4 +1,4 @@
-/* Shared layout for tool pages. Phone: answer, inputs, results. Wide screen: inputs left, answer and results right. */
+/* Layout of the page. Phone: answer, inputs, answers per section. Wide screen: inputs left, answers right. */
 
 .tool-layout {
   display: grid;
@@ -53,8 +53,7 @@
 
 /* ---------- inputs ---------- */
 
-.person-input + .person-input,
-.inputs-section {
+.person-input + .person-input {
   margin-block-start: 22px;
   padding-block-start: 18px;
   border-block-start: 1px solid var(--line);
@@ -158,6 +157,18 @@ fieldset.pension > legend {
 .reason-sentence {
   margin: 0 0 12px;
   font-weight: 600;
+}
+
+/* The one-sentence answer at the top of a section, smaller than the headline answer. */
+.section-answer {
+  margin: 0 0 4px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.section-answer + .small {
+  margin-block: 0 12px;
 }
 
 .person-card h2 {

@@ -16,11 +16,17 @@ export function withAmount(sentence: string, amountHtml: string): string {
     .join(amountHtml);
 }
 
+export interface OpenDetails {
+  /** " open" when the <details> with this key was open, for use inside its tag. */
+  openIf: (key: string) => string;
+  isOpen: (key: string) => boolean;
+}
+
 /**
  * Remembers which <details data-key="..."> are open, so they stay open when a page redraws.
  * Use ` open` from openIf() when rendering.
  */
-export function rememberOpenDetails(): { openIf: (key: string) => string; isOpen: (key: string) => boolean } {
+export function rememberOpenDetails(): OpenDetails {
   const open = new Set<string>();
   // "toggle" does not bubble, so listen in the capture phase.
   document.addEventListener(

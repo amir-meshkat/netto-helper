@@ -1,6 +1,6 @@
-import { isJobInput, newJob, type JobInput } from "../../ui/job-input";
-import { isSideInput, type SideInput } from "../../ui/side-input";
-import { readStored, writeStored } from "../../ui/storage";
+import { isJobInput, newJob, type JobInput } from "../ui/job-input";
+import { isSideInput, type SideInput } from "../ui/side-input";
+import { readStored, writeStored } from "../ui/storage";
 
 /** One person: a salaried job, plus optional side income as a zzp'er. */
 export interface PersonInput {
@@ -27,15 +27,23 @@ export function defaultState(): HouseholdState {
 
 // Saved in this browser only (localStorage), never sent anywhere.
 // Version 1 allowed several jobs per person; version 2 has one job plus side income.
+// The key still says "household": the one page took over the household page's inputs as they were.
 const STORAGE_KEY = "netto-helper:household:v2";
+
+/** Where the separate side income page (before milestone 5) kept its own inputs. */
+const OLD_SIDE_INCOME_KEY = "netto-helper:side-income:v1";
 
 /** What was saved on this device, or null when nothing (valid) was saved yet. */
 export function loadSavedState(): HouseholdState | null {
   return parseSavedState(readStored(STORAGE_KEY));
 }
 
+/**
+ * What this device had typed before. The household inputs carry over as they are. The old side income
+ * page's inputs are only used when there are no household inputs yet.
+ */
 export function loadState(): HouseholdState {
-  return loadSavedState() ?? defaultState();
+  return loadSavedState() ?? fromOldSideIncomePage(readStored(OLD_SIDE_INCOME_KEY)) ?? defaultState();
 }
 
 export function saveState(state: HouseholdState): void {
@@ -61,4 +69,31 @@ function isHouseholdState(value: unknown): value is HouseholdState {
     const p = person as Record<string, unknown>;
     return typeof p.name === "string" && isJobInput(p.job) && (p.side === null || isSideInput(p.side));
   });
+}
+
+/**
+ * The old side income page saved one or two partners with a salary each, and one side income that
+ * belonged to nobody in particular. Here the partners become the people, and the side income goes to the
+ * first person, the "you" of that page. Null when nothing valid was saved there.
+ */
+export function fromOldSideIncomePage(raw: string | null): HouseholdState | null {
+  let value: unknown;
+  try {
+    value = raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+  if (typeof value !== "object" || value === null) return null;
+  const old = value as Record<string, unknown>;
+  const partners = old.partners;
+  if (old.version !== 1 || !Array.isArray(partners) || !isSideInput(old.side)) return null;
+  if (partners.length < 1 || partners.length > MAX_PEOPLE) return null;
+  const people: PersonInput[] = [];
+  for (const partner of partners as unknown[]) {
+    if (typeof partner !== "object" || partner === null) return null;
+    const p = partner as Record<string, unknown>;
+    if (typeof p.name !== "string" || !isJobInput(p.main)) return null;
+    people.push({ name: p.name, job: p.main, side: people.length === 0 ? old.side : null });
+  }
+  return { version: 2, people };
 }

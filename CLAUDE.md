@@ -18,7 +18,7 @@ This is a learning project as much as a software project. Follow these rules:
 
 ## Design principles for the pages
 
-The audience has limited patience for complexity. Every page follows the same order:
+The audience has limited patience for complexity. The page, and each section on it, follows the same order:
 
 1. **Answer first.** One sentence in euros, preferably per month. Example: "The second job is worth €130 more per month with Sara than with you."
 2. **One simple reason.** A visual that needs no explanation.
@@ -32,12 +32,13 @@ Other principles:
 - Label Dutch terms next to English ones, for example "General tax credit (algemene heffingskorting)". Later the site will be available in English, Dutch and Persian, so keep all UI text in a translation file from the start, and make layouts ready for right to left text (Persian).
 - Numbers can be typed or dragged. Every number input has a slider next to its text box, and the results update in real time while dragging (milestone 4). Income comes first.
 - Many parameters, all optional. Add every parameter that changes the answer for real people, but give each one a sensible default and keep it behind a "More details" toggle, like holiday pay and pension today. The answer shows before any of them is filled in.
-- Every page works on a phone.
-- Every page shows a short "Not included" note and "Indicative only, not tax advice".
+- The page starts simple: one salary and one answer. A section only appears once the person adds what it needs (a partner, side income, later toeslagen inputs).
+- The page works on a phone.
+- The page shows a short "Not included" note and "Indicative only, not tax advice".
 
 ## Tech stack
 
-- Vite with TypeScript, multi-page setup (one HTML file per tool page).
+- Vite with TypeScript. One page, `index.html`: the tools are sections on it, all fed by one set of inputs (milestone 5).
 - No UI framework needed at the start. Plain TypeScript and CSS. Charts as hand-written SVG, or a small library such as Chart.js if needed.
 - Vitest for unit tests of the calculation engine.
 - Deployable as a static site (GitHub Pages or Netlify). Run locally with `npm run dev`.
@@ -49,8 +50,8 @@ If Amir prefers C# later, the engine is small enough to port. Keep it free of UI
 - Work happens in Claude Code sessions in the cloud. That machine is temporary, so finished work only counts once it is pushed to GitHub: github.com/amir-meshkat/netto-helper.
 - Push straight to `main`, no pull requests (Amir's choice, 26 September 2026). Before every push, run `npm test`, `npm run typecheck` and `npm run build`, and push only when all three pass.
 - Amir gets the code on his laptop with `git pull`. `.claude/launch.json` starts the dev server there; it holds the Windows path to node.exe, so it only works on his laptop.
-- Preview: a private page at https://claude.ai/artifact/LBHZ7e7fuGpw1gD4fpX1yr, only visible to Amir until he shares it. Republish it after each milestone so he can try the pages, also on his phone. Publish the output of `npm run build`: the landing page `dist/index.html` as the page itself, without its `<!doctype>`, `<html>`, `<head>` and `<body>` tags (the host adds its own), and every other file in `dist/` at its own path. From a new session, pass that URL to update the same page.
-- Links between pages name the file: `household/index.html` and `../index.html`, never a bare folder like `household/`. The preview host may not open a folder's index page.
+- Preview: a private page at https://claude.ai/artifact/LBHZ7e7fuGpw1gD4fpX1yr, only visible to Amir until he shares it. Republish it after each milestone so he can try the page, also on his phone. Publish the output of `npm run build`: `dist/index.html` as the page itself, without its `<!doctype>`, `<html>`, `<head>` and `<body>` tags (the host adds its own), and every other file in `dist/` at its own path. From a new session, pass that URL to update the same page.
+- Each section has a plain anchor (`#netto`, `#each-100`, `#people`, `#side-income`), so a link can open the page at one question. Keep anchors to letters, digits and hyphens: the preview host passes only plain anchors like these.
 
 ## Architecture
 
@@ -73,12 +74,15 @@ src/
   i18n/
     en.ts            all English UI text (nl.ts and fa.ts later, same shape)
     index.ts         picks the language, only English for now
-  pages/
-    landing/         index.html: quick answer and the tools as questions
-    household/       milestone 2
-    side-income/     milestone 3
+  app/
+    main.ts          the one page: inputs, events, redraw once per frame
+    state.ts         what was typed, saved in this browser; carries over the old pages' inputs
+    household.ts     sections: headline answer, where each €100 goes, a card per person
+    side-situation.ts which side income to show and who should earn it (no DOM, tested)
+    side-income.ts   section: what side income leaves, how much to set aside, the chart
+    view.ts          what every section needs to draw itself
   ui/                shared: formatting, forgiving number input, sliders, job and side income forms, bars, 100 grid, line chart
-index.html, household/index.html, side-income/index.html   one HTML entry per page
+index.html           the page
 prototype/           bruto-netto-2026.html, the first single-file version. Reference only, not part of the build.
 ```
 
@@ -171,7 +175,7 @@ Compute these from the rules, do not hard code them. The table is for testing.
 
 ## Milestones
 
-Stop after each one for review. Status on 26 September 2026: 1 to 4 are done, 5 is next.
+Stop after each one for review. Status on 26 September 2026: 1 to 5 are done, 6 is dropped, 7 is next.
 
 The milestones were renumbered on 26 September 2026. Before that, the side income page was milestone 5, the "next €100" pages were 3 and 4, and 6 was the dropped payslip check.
 
@@ -184,16 +188,16 @@ The milestones were renumbered on 26 September 2026. Before that, the side incom
    - Per person: netto and "of the next €100".
    - Side income, when someone has it: how much to set aside per month, and with a partner, how much more or less it would be worth if the other partner earned it, with the chart against salary.
 
-   Wide screens: inputs on the left, answers on the right. Each section gets a plain #anchor, so a link can point to one question. Saved inputs from the old pages carry over. The engine does not change.
+   Wide screens: inputs on the left, answers on the right. Each section gets a plain #anchor, so a link can point to one question. Saved inputs from the old pages carry over. The engine does not change. *Done:* the code is in `src/app/`. A person alone gets no heading or name field; names appear with a partner. The per-person card no longer repeats the set-aside note, the side income section has it. When both partners have side income there is nothing to compare, so the section shows each one's own and no chart. The old side income page's inputs carry over only when there are no household inputs, with the side income on the first person.
 6. ~~"Next €100" pages for one person and for a couple.~~ Dropped on 26 September 2026: with sliders and one page, dragging a salary already shows total netto growing and "of the next €100" changing for each partner. What is left, a chart across all incomes, moves to milestone 7.
 7. **Toeslagen.** Zorgtoeslag, huurtoeslag, kindgebonden budget and kinderopvangtoeslag on the combined household income. Every extra input is optional, with a sensible default: for example rent, children and their ages, childcare hours and costs, and savings for the asset test (vermogenstoets). Add "lost toeslag" as a third colour in the "next €100" bar, and show the armoedeval honestly where it occurs. Research the exact 2026 rules first, write them into this file like the tax rules above, and confirm them with Amir. Build one toeslag at a time, starting with zorgtoeslag because its hard income limit causes the armoedeval. Then add the "Is working more worth it?" section: a chart of "of the next €100" across all incomes, with the tax zones and lost toeslag in colour and a "you are here" dot for each partner.
 8. **More optional parameters.** One at a time, add the items from "Not included" below that change the answer for many people, each as an optional input that is zero or off by default: mortgage (hypotheekrenteaftrek and eigenwoningforfait), a lijfrente what-if (a deposit lowers taxable income and the toetsingsinkomen for toeslagen), savings and investments in box 3, people at AOW age, special bonus rates, and for zzp'ers business losses, KOR and investment deductions. Explain each rule first, as always, and agree the order with Amir.
 
-Dropped: ~~payslip check for two jobs~~. Two employers are rare in practice, and the set-aside question for zzp side income is answered on the side income page. The engine keeps `withholding.ts`.
+Dropped: ~~payslip check for two jobs~~. Two employers are rare in practice, and the set-aside question for zzp side income is answered in the side income section. The engine keeps `withholding.ts`.
 
 Later ideas, not now: Dutch and Persian translations, an explanation layer where an LLM explains results in plain language while the numbers always come from the engine, and a public site on GitHub Pages or Netlify.
 
-## Not included (show this on every page until added)
+## Not included (show this on the page until added)
 
 Toeslagen (until milestone 7), mortgage interest and other deductions, box 3 savings, lijfrente, special bonus rates, business losses, KOR and investment deductions, people at AOW age (until milestone 8). On salary the employer pays the Zvw health contribution; on side income the zzp'er pays it, and that is included.
 

@@ -4,18 +4,44 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="light dark" />
-    <meta name="description" content="What you actually keep from your Dutch salary, and why. Simple answers in euros." />
+    <meta name="description" content="What you actually keep from your Dutch salary and side income, and why. Simple answers in euros." />
     <title>Netto Helper</title>
-    <script type="module" src="/src/pages/landing/main.ts"></script>
+    <script type="module" src="/src/app/main.ts"></script>
   </head>
   <body>
-    <div class="wrap">
+    <div class="wrap" id="top">
       <header class="site-header" id="site-header"></header>
       <main>
-        <section id="hero"></section>
-        <section id="tools"></section>
+        <h1 class="page-title" id="page-title"></h1>
+        <p class="page-intro" id="page-intro"></p>
+        <div class="tool-layout">
+          <section class="card area-answer" id="netto"><div id="answer" aria-live="polite"></div></section>
+          <section class="card area-inputs" aria-labelledby="inputs-title">
+            <h2 id="inputs-title"></h2>
+            <div id="inputs"></div>
+          </section>
+          <div class="area-results stack">
+            <section class="card" id="each-100"></section>
+            <div class="stack" id="people"></div>
+            <div class="stack" id="side-income" hidden>
+              <section class="card" id="side-reason"></section>
+              <section class="card" id="side-aside"></section>
+              <section class="card" id="side-chart-card" aria-labelledby="chart-title">
+                <h2 id="chart-title"></h2>
+                <p class="card-sub" id="chart-sub"></p>
+                <ul class="chart-legend" id="chart-legend"></ul>
+                <div id="chart"></div>
+                <details class="why" data-key="chart-table">
+                  <summary id="table-toggle"></summary>
+                  <div id="chart-table"></div>
+                </details>
+              </section>
+            </div>
+          </div>
+        </div>
       </main>
       <footer class="site-footer" id="site-footer"></footer>
     </div>
+    <button type="button" class="mini-answer" id="mini" hidden></button>
   </body>
 </html>

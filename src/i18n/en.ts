@@ -25,11 +25,7 @@ export const en = {
   },
 
   common: {
-    homeLink: "All tools",
     showWhy: "Show me why",
-    perMonth: "per month",
-    comingSoon: "Coming soon",
-    open: "Open",
     you: "You",
     youInSentence: "you",
     partner: "Your partner",
@@ -106,44 +102,15 @@ export const en = {
     starterHint: (amount: string) => `Adds a startersaftrek of ${amount}, but only together with the hours criterion.`,
   },
 
-  landing: {
+  /** The one page: title and intro above everything else. */
+  page: {
     title: "What do you actually keep?",
     intro:
-      "Simple answers in euros about Dutch salary, side income, tax and toeslagen. Made for everyone who wonders where their money goes, and whether working more is worth it.",
-    quickLabel: "Your gross salary per month",
-    quickAnswer: "You keep {amount} per month.",
-    quickNote: "Holiday pay included, spread over the year.",
-    quickMore: "Add pension, side income or a partner",
-    toolsTitle: "Questions this site answers",
-    tools: [
-      {
-        id: "household",
-        question: "What does our household keep?",
-        text: "Netto per month for one or two people, with salary and side income.",
-      },
-      {
-        id: "side-income",
-        question: "What is left of side income as a zzp'er?",
-        text: "What you keep, how much to set aside for tax, and which partner should earn it.",
-      },
-      {
-        id: "next-100",
-        question: "Is working more worth it?",
-        text: "Of the next €100 you earn, how much do you keep? Spoiler: always something, from income tax alone.",
-      },
-      {
-        id: "toeslagen",
-        question: "What about toeslagen?",
-        text: "Huurtoeslag, zorgtoeslag and kindgebonden budget, and the places where earning more can cost you.",
-      },
-    ],
+      "Simple answers in euros about Dutch salary, side income and tax, for everyone who wonders where their money goes. Type or drag your salary, add a partner or side income, and every answer updates as you go.",
+    inputsTitle: "Your situation",
   },
 
   household: {
-    title: "What does your household keep?",
-    intro:
-      "Type each person's gross monthly salary, and any side income as a zzp'er. You see right away what is left each month.",
-    inputsTitle: "Your situation",
     salaryTitle: "Salary",
     sideTitle: "Side income as a zzp'er",
     addSide: "Add side income (zzp)",
@@ -166,8 +133,6 @@ export const en = {
     personKeeps: (p: Who) => `${keeps(p)} {amount} per month`,
     nextHundred: (p: Who, amount: string) => `${keeps(p)} ${amount} of the next €100 of salary.`,
     nextHundredNote: "Earning more never leaves you with less in total, only less per extra euro. Toeslagen are not included yet.",
-    setAside: (p: Who, perMonth: string, perYear: string) =>
-      `Nothing is withheld on ${whose(p)} side income. Set aside about ${perMonth} per month (${perYear} a year) for income tax and Zvw, or ask for a provisional assessment (voorlopige aanslag) to pay it monthly.`,
 
     why: {
       salary: "Salary per year, with holiday pay and bonus",
@@ -211,33 +176,22 @@ export const en = {
     },
   },
 
+  /** The side income section: shown once someone has side income with a profit. */
   sideIncome: {
-    title: "Side income as a zzp'er",
-    intro:
-      "Freelance work on top of a salary: what you keep, how much to set aside for tax, and for couples, which partner keeps the most of it.",
-    inputsTitle: "Your situation",
-    salaryTitle: "Salary",
-    sideTitle: "The side income",
-    addPartner: "Add a partner, to see who should earn it",
-
-    answerLabelOne: "What you keep",
     answerOne: (p: Who) => `${keeps(p)} {amount} per month of the side income.`,
     answerOneSub: (profit: string, kept: string) => `Of ${profit} profit per year, ${kept} is left after income tax and Zvw.`,
-    setAsideOne: (perMonth: string) =>
-      `Set aside ${perMonth} per month for income tax and Zvw: nothing is withheld on side income.`,
     answerLabelTwo: "Who should earn it",
     answerBetter: (better: Who, other: Who) =>
       `The side income is worth {amount} more per month with ${better.inSentence} than with ${other.inSentence}.`,
     answerEither: "It hardly matters who earns it: about {amount} per month is left either way.",
     answerTwoSub: (first: Who, keptFirst: string, second: Who, keptSecond: string) =>
       `Of it, ${first.inSentence} would keep ${keptFirst} per month and ${second.inSentence} ${keptSecond}.`,
-    answerEmpty: "Type the revenue of the side income to see the answer.",
-    pillOne: (kept: string, setAside: string) => `Keep ${kept}, set aside ${setAside} per month`,
-    pillBetter: (p: Who, amount: string) => `Best with ${p.inSentence}: ${amount} more per month`,
-    pillEither: (amount: string) => `Either way about ${amount} per month`,
+    answerEach: "Together you keep {amount} per month of your side incomes.",
 
     reasonTitle: "Where the side income goes",
     rowKeeps: (p: Who, kept: string, profit: string) => `${keeps(p)} ${kept} of ${profit} per month`,
+    rowIf: (p: Who, now: boolean, kept: string, profit: string) =>
+      `${ifEarns(p)}${now ? " (as now)" : ""}, ${keepsMid(p)} ${kept} of ${profit} per month`,
     legendKept: "Kept",
     legendSetAside: "Set aside: income tax and Zvw",
     reasonWhy: (a: Who, keptA: string, b: Who, keptB: string) =>
@@ -266,6 +220,8 @@ export const en = {
       "There is no employer, so nothing is withheld on side income. You pay the income tax and Zvw on it with the tax return (aangifte), or monthly with a provisional assessment (voorlopige aanslag). Ask for one at the Belastingdienst to avoid one big bill.",
     setAsideLine: (p: Who | null, perMonth: string, tax: string, zvw: string) =>
       `${p ? `${ifEarns(p)}: set aside` : "Set aside"} ${perMonth} per month: ${tax} income tax and ${zvw} Zvw.`,
+    setAsideOwn: (p: Who, perMonth: string, tax: string, zvw: string) =>
+      `For ${whose(p)} side income, set aside ${perMonth} per month: ${tax} income tax and ${zvw} Zvw.`,
 
     whyProfit: "Profit (revenue minus costs)",
     whyDeductions: "Entrepreneur deductions and mkb-winstvrijstelling",
