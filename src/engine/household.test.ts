@@ -70,3 +70,63 @@ describe("householdTotal", () => {
     expect(total.toetsingsinkomen).toBeCloseTo(40_000 - 1_200 + 8_730, 6);
   });
 });
+
+describe("householdNetto with an eigen woning saldo", () => {
+  const people = (a: number, b: number) => [{ jobs: [yearlyJob(a)] }, { jobs: b > 0 ? [yearlyJob(b)] : [] }];
+  const tax = (r: ReturnType<typeof householdNetto>) => r.tax;
+
+  it("puts all of it with the earner when the partner has no income: 4,659.55 less tax, not 2,329.77", () => {
+    const without = householdNetto(people(51_840, 0), rules);
+    const withHome = householdNetto(people(51_840, 0), rules, -10_600);
+    expect(withHome.people.map((p) => p.woning)).toEqual([-10_600, 0]);
+    expect(tax(without) - tax(withHome)).toBeCloseTo(4_659.55, 2);
+  });
+
+  it("keeps half each when no division is better", () => {
+    const withHome = householdNetto(people(51_840, 51_840), rules, -10_600);
+    expect(withHome.people.map((p) => p.woning)).toEqual([-5_300, -5_300]);
+  });
+
+  it("puts a positive saldo with the partner who pays no tax on it", () => {
+    const withHome = householdNetto(people(51_840, 0), rules, 393.86);
+    expect(withHome.people[1]?.woning).toBeCloseTo(393.86, 6);
+    expect(tax(withHome)).toBeCloseTo(tax(householdNetto(people(51_840, 0), rules)), 6);
+  });
+
+  it("finds a division at least as good as every division in steps of 1%", () => {
+    const cases: [number, number, number][] = [
+      [60_000, 15_000, -25_000],
+      [90_000, 30_000, -40_000],
+      [20_000, 12_000, -6_000],
+      [45_000, 44_000, -30_000],
+      [130_000, 0, -60_000],
+      [30_000, 9_000, 500],
+    ];
+    for (const [a, b, saldo] of cases) {
+      const best = tax(householdNetto(people(a, b), rules, saldo));
+      for (let k = 0; k <= 100; k++) {
+        const share = (saldo * k) / 100;
+        const other = personNetto([yearlyJob(a)], rules, null, share).tax + personNetto(b > 0 ? [yearlyJob(b)] : [], rules, null, saldo - share).tax;
+        expect(best).toBeLessThanOrEqual(other + 0.005);
+      }
+    }
+  });
+});
+
+describe("householdTotal with an own home", () => {
+  it("lowers the toetsingsinkomen by the saldo, so toeslagen can go up", () => {
+    const home = { vermogen: 0, children: [], rent: null, allYoung: false };
+    const owner = { ...home, owner: { woz: 300_000, interest: 9_000 } };
+    const without = householdTotal([{ jobs: [yearlyJob(40_000)] }], home, rules);
+    const withHome = householdTotal([{ jobs: [yearlyJob(40_000)] }], owner, rules);
+    // Saldo: 0.35% x 300,000 - 9,000 = -7,950.
+    expect(withHome.eigenWoning?.saldo).toBeCloseTo(-7_950, 6);
+    expect(withHome.toetsingsinkomen).toBeCloseTo(40_000 - 7_950, 6);
+    expect(withHome.toeslagen.zorgtoeslag.amount).toBeGreaterThan(without.toeslagen.zorgtoeslag.amount);
+  });
+
+  it("gives an owner no huurtoeslag, even with a rent typed", () => {
+    const home = { vermogen: 0, children: [], rent: 800, allYoung: false, owner: { woz: 300_000, interest: 9_000 } };
+    expect(householdTotal([{ jobs: [yearlyJob(25_000)] }], home, rules).toeslagen.huurtoeslag.amount).toBe(0);
+  });
+});

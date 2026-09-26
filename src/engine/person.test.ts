@@ -105,3 +105,41 @@ describe("personNetto", () => {
     }
   });
 });
+
+describe("personNetto with a share of the eigen woning saldo", () => {
+  const job = (monthly: number, holiday = 0): Job => ({ monthlyGross: monthly, holidayPayRate: holiday, yearEndBonusRate: 0, pension: NO_PENSION });
+
+  it("worked example: 51,840 and a saldo of -10,600 is 4,659.55 less tax (37.56% plus 6.398% general credit)", () => {
+    const without = personNetto([job(4_000, 0.08)], rules);
+    const withHome = personNetto([job(4_000, 0.08)], rules, null, -10_600);
+    expect(withHome.taxable).toBeCloseTo(41_240, 6);
+    expect(withHome.woning).toBe(-10_600);
+    expect(without.tax - withHome.tax).toBeCloseTo(4_659.55, 2);
+    // The labour credit looks at income from work, which does not change.
+    expect(withHome.incomeTax.labourCredit).toBeCloseTo(without.incomeTax.labourCredit, 6);
+    expect(withHome.netto - without.netto).toBeCloseTo(4_659.55, 2);
+  });
+
+  it("top bracket: a saldo of -17,900 on 120,000 saves exactly 37.56%, after a tariefsaanpassing of 2,137.26", () => {
+    const without = personNetto([job(10_000)], rules);
+    const withHome = personNetto([job(10_000)], rules, null, -17_900);
+    expect(withHome.incomeTax.topBracketAdjustment).toBeCloseTo(2_137.26, 2);
+    expect(without.tax - withHome.tax).toBeCloseTo(6_723.24, 2);
+  });
+
+  it("the tariefsaanpassing only takes the part of the deduction that falls in the top bracket", () => {
+    // 80,000 - 78,426 = 1,574 of the 10,000 deduction is in the top bracket.
+    const withHome = personNetto([job(80_000 / 12)], rules, null, -10_000);
+    expect(withHome.incomeTax.topBracketAdjustment).toBeCloseTo(0.1194 * 1_574, 6);
+  });
+
+  it("a positive saldo (Wet Hillen) is taxed as income", () => {
+    const withHome = personNetto([job(3_000)], rules, null, 393.86);
+    expect(withHome.taxable).toBeCloseTo(36_393.86, 6);
+    expect(withHome.tax - personNetto([job(3_000)], rules).tax).toBeGreaterThan(0);
+  });
+
+  it("taxable income does not go below zero", () => {
+    expect(personNetto([job(500)], rules, null, -20_000).taxable).toBe(0);
+  });
+});

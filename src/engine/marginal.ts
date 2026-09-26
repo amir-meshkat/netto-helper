@@ -1,6 +1,6 @@
 import type { TaxRules } from "../rules";
 import type { SideIncome } from "./business";
-import { householdNetto, householdTotal, toeslagHousehold, type Home, type PersonIncome } from "./household";
+import { homeEigenWoning, householdNetto, householdTotal, toeslagHousehold, type Home, type PersonIncome } from "./household";
 import { gradualToeslagen, kinderopvangBand, kinderopvangtoeslag, toeslagCliffs, type ToeslagCliff, type ToeslagHousehold } from "./toeslagen";
 import { NO_PENSION, incomeTax, personNetto, type Job } from "./person";
 
@@ -19,11 +19,12 @@ export function keptOfNext(taxableIncome: number, rules: TaxRules, amount = 100)
 
 /**
  * Of the next `amount` euros of salary, the part a person keeps. Unlike keptOfNext, this also
- * counts side income: its profit changes the credits and the room left for the Zvw contribution.
+ * counts side income (its profit changes the credits and the room left for the Zvw contribution)
+ * and the person's share of the eigen woning saldo.
  */
-export function keptOfNextSalary(jobs: Job[], side: SideIncome | null, rules: TaxRules, amount = 100): number {
+export function keptOfNextSalary(jobs: Job[], side: SideIncome | null, rules: TaxRules, amount = 100, woning = 0): number {
   const extra: Job = { monthlyGross: amount / 12, holidayPayRate: 0, yearEndBonusRate: 0, pension: NO_PENSION };
-  return personNetto([...jobs, extra], rules, side).netto - personNetto(jobs, rules, side).netto;
+  return personNetto([...jobs, extra], rules, side, woning).netto - personNetto(jobs, rules, side, woning).netto;
 }
 
 export interface NextSalary {
@@ -97,11 +98,12 @@ function stepsPerHundred(h: ToeslagHousehold, rules: TaxRules): number {
  */
 export function nextHundredCurve(people: PersonIncome[], home: Home, p: number, monthlyGross: number[], rules: TaxRules): NextHundredPoint[] {
   const amount = 100;
+  const saldo = homeEigenWoning(home, rules)?.saldo ?? 0;
   return monthlyGross.map((x) => {
     const at = people.map((person, i) => (i === p ? withSalary(person, x) : person));
     const more = at.map((person, i) => (i === p ? { ...person, jobs: [...person.jobs, extraJob(amount)] } : person));
     const here = householdTotal(at, home, rules);
-    const work = householdNetto(more, rules);
+    const work = householdNetto(more, rules, saldo);
     const now = toeslagHousehold(here.work, home);
     const tax = amount - (work.netto - here.work.netto);
     const fromSteps = stepsPerHundred(now, rules);

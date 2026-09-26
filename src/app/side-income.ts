@@ -1,6 +1,6 @@
 import { businessProfit, type SideIncome } from "../engine/business";
-import { keptOfNext } from "../engine/marginal";
-import { jobYear, type Job } from "../engine/person";
+import { keptOfNextSalary } from "../engine/marginal";
+import type { Job } from "../engine/person";
 import { sideIncomeCurve, sideIncomeValue, type SideIncomeValue } from "../engine/side-income";
 import { t } from "../i18n";
 import { legend, stackedBar } from "../ui/components";
@@ -143,7 +143,7 @@ function renderReason(sit: SideSituation, view: View, lostToeslagen: number): vo
   let why = "";
   let householdIf = "";
   if (sit.kind === "one") {
-    const next100 = sit.mains.map((main) => eurosCents(keptOfNext(jobYear(main).taxable, view.rules)));
+    const next100 = sit.mains.map((main, i) => eurosCents(keptOfNextSalary([main], null, view.rules, 100, sit.woning[i] ?? 0)));
     why = couple
       ? s.reasonWhy(view.who(0), next100[0] ?? "", view.who(1), next100[1] ?? "")
       : s.reasonWhyOne(view.who(sit.owner), next100[sit.owner] ?? "");
@@ -201,22 +201,24 @@ function renderChart(sit: OneSideIncome, view: View): void {
 
   // One curve when everyone's salary has the same holiday pay and pension, otherwise one per person.
   const [mainA = toEngineJob(newJob()), mainB] = sit.mains;
-  const sameSettings = !mainB || JSON.stringify({ ...mainA, monthlyGross: 0 }) === JSON.stringify({ ...mainB, monthlyGross: 0 });
-  const toSeries = (main: Job, label: string, color: string): ChartSeries => ({
+  const [woningA = 0, woningB = 0] = sit.woning;
+  const sameSettings =
+    !mainB || (JSON.stringify({ ...mainA, monthlyGross: 0 }) === JSON.stringify({ ...mainB, monthlyGross: 0 }) && woningA === woningB);
+  const toSeries = (main: Job, label: string, color: string, woning: number): ChartSeries => ({
     label,
     color,
-    points: sideIncomeCurve(main, sit.side, xs, rules).map((p) => ({ x: p.monthlyGross, y: p.kept / 12 })),
+    points: sideIncomeCurve(main, sit.side, xs, rules, woning).map((p) => ({ x: p.monthlyGross, y: p.kept / 12 })),
   });
   const series =
     sameSettings || !mainB
-      ? [toSeries(mainA, s.chartY, "var(--muted)")]
-      : [toSeries(mainA, view.who(0).name, COLORS[0] ?? ""), toSeries(mainB, view.who(1).name, COLORS[1] ?? "")];
+      ? [toSeries(mainA, s.chartY, "var(--muted)", woningA)]
+      : [toSeries(mainA, view.who(0).name, COLORS[0] ?? "", woningA), toSeries(mainB, view.who(1).name, COLORS[1] ?? "", woningB)];
 
   byId("chart-sub").textContent = s.chartSub(euros(profitPerMonth), couple);
   byId("chart-legend").innerHTML = sameSettings
     ? ""
     : series
-        .map((line, i) => `<li><span class="line-key" style="background:${line.color}"></span>${escapeHtml(s.chartSettingsOf(view.who(i)))}</li>`)
+        .map((line, i) => `<li><span class="line-key" style="background:${line.color}"></span>${escapeHtml(s.chartSettingsOf(view.who(i), woningA !== 0 || woningB !== 0))}</li>`)
         .join("");
 
   const markerLabel = (i: number) => `${view.who(i).name} ${euros(kept(i))}`;
@@ -241,7 +243,7 @@ function renderChart(sit: OneSideIncome, view: View): void {
   const tableRows = [];
   for (let x = 0; x <= xMax; x += tableStep) {
     const cells = mains
-      .map((main) => `<td>${escapeHtml(euros(sideIncomeValue([{ ...main, monthlyGross: x }], sit.side, rules).kept / 12))}</td>`)
+      .map((main, i) => `<td>${escapeHtml(euros(sideIncomeValue([{ ...main, monthlyGross: x }], sit.side, rules, sit.woning[i] ?? 0).kept / 12))}</td>`)
       .join("");
     tableRows.push(`<tr><td>${escapeHtml(euros(x))}</td>${cells}</tr>`);
   }

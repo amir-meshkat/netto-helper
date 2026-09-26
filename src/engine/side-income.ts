@@ -22,11 +22,12 @@ export interface SideIncomeValue {
 
 /**
  * The value of side income to one person. Tax is per person, on the total of their income,
- * so the same side income is worth a different amount to each partner.
+ * so the same side income is worth a different amount to each partner. `woning` is the person's
+ * share of the eigen woning saldo, the same with and without the side income.
  */
-export function sideIncomeValue(jobs: Job[], side: SideIncome, rules: TaxRules): SideIncomeValue {
-  const without = personNetto(jobs, rules);
-  const withSide = personNetto(jobs, rules, side);
+export function sideIncomeValue(jobs: Job[], side: SideIncome, rules: TaxRules, woning = 0): SideIncomeValue {
+  const without = personNetto(jobs, rules, null, woning);
+  const withSide = personNetto(jobs, rules, side, woning);
   const extraTax = withSide.tax - without.tax;
   return {
     nettoWithout: without.netto,
@@ -47,9 +48,9 @@ export interface CurvePoint {
 }
 
 /** Kept from the side income for a range of main job salaries, keeping the main job's other settings. */
-export function sideIncomeCurve(mainJob: Job, side: SideIncome, monthlyGrossValues: number[], rules: TaxRules): CurvePoint[] {
+export function sideIncomeCurve(mainJob: Job, side: SideIncome, monthlyGrossValues: number[], rules: TaxRules, woning = 0): CurvePoint[] {
   return monthlyGrossValues.map((monthlyGross) => ({
     monthlyGross,
-    kept: sideIncomeValue([{ ...mainJob, monthlyGross }], side, rules).kept,
+    kept: sideIncomeValue([{ ...mainJob, monthlyGross }], side, rules, woning).kept,
   }));
 }

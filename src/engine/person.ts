@@ -46,7 +46,7 @@ export interface IncomeTax {
   /** Income from work (arbeidsinkomen), the base for the labour credit. */
   workIncome: number;
   box1: Box1Tax;
-  /** Tariefsaanpassing on entrepreneur deductions in the top bracket, added before the credits. */
+  /** Tariefsaanpassing on deductions in the top bracket (entrepreneur deductions, a negative eigen woning saldo), added before the credits. */
   topBracketAdjustment: number;
   generalCredit: number;
   labourCredit: number;
@@ -89,6 +89,8 @@ export interface PersonResult {
   pension: number;
   /** Side income as a zzp'er, or null. */
   business: BusinessProfit | null;
+  /** This person's share of the eigen woning saldo: above zero it adds to the income, below zero it is a deduction. */
+  woning: number;
   taxable: number;
   incomeTax: IncomeTax;
   tax: number;
@@ -98,21 +100,23 @@ export interface PersonResult {
 }
 
 /**
- * Yearly netto for one person: salary from one or more jobs, plus optional side income as a zzp'er.
- * Brackets and credits apply to the total, not per job.
+ * Yearly netto for one person: salary from one or more jobs, plus optional side income as a zzp'er, plus
+ * their share of the eigen woning saldo (`woning`). Brackets and credits apply to the total, not per job.
  */
-export function personNetto(jobs: Job[], rules: TaxRules, side: SideIncome | null = null): PersonResult {
+export function personNetto(jobs: Job[], rules: TaxRules, side: SideIncome | null = null, woning = 0): PersonResult {
   const years = jobs.map(jobYear);
   const gross = years.reduce((total, j) => total + j.gross, 0);
   const pension = years.reduce((total, j) => total + j.pension, 0);
   const salary = gross - pension;
   const business = side ? businessProfit(side, rules) : null;
   const profit = business?.profit ?? 0;
-  const taxable = Math.max(0, salary + (business?.taxableProfit ?? 0));
+  // A negative box 1 income could be set off against other years (verliesverrekening); not included.
+  const taxable = Math.max(0, salary + (business?.taxableProfit ?? 0) + woning);
   const tax = incomeTax(taxable, rules, {
-    // Profit counts as income from work before the entrepreneur deductions.
+    // Profit counts as income from work before the entrepreneur deductions. The home is not work.
     workIncome: salary + profit,
-    topBracketAdjustment: business ? topBracketAdjustment(business.deductions, salary + profit, rules) : 0,
+    // The negative eigen woning saldo is capped like the entrepreneur deductions, measured on income before both.
+    topBracketAdjustment: topBracketAdjustment((business?.deductions ?? 0) + Math.max(0, -woning), salary + profit + Math.max(0, woning), rules),
   });
   const zvw = business ? zvwContribution(business.taxableProfit, salary, rules) : 0;
   return {
@@ -120,6 +124,7 @@ export function personNetto(jobs: Job[], rules: TaxRules, side: SideIncome | nul
     gross,
     pension,
     business,
+    woning,
     taxable,
     incomeTax: tax,
     tax: tax.tax,

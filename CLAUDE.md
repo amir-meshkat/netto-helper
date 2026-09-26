@@ -52,7 +52,7 @@ If Amir prefers C# later, the engine is small enough to port. Keep it free of UI
 - Live site: https://amir-meshkat.github.io/netto-helper/ (GitHub Pages, from 26 September 2026). Every push to `main` goes live: `.github/workflows/deploy.yml` runs the tests and the build (which includes the typecheck) and publishes `dist/`. A failing test stops the deploy. Pages is switched on in the repository settings with Source "GitHub Actions". The site is public: anything pushed to `main` is visible to everyone within minutes.
 - Amir gets the code on his laptop with `git pull`. `.claude/launch.json` starts the dev server there; it holds the Windows path to node.exe, so it only works on his laptop.
 - Preview: https://claude.ai/artifact/LBHZ7e7fuGpw1gD4fpX1yr, shared by link. Optional now that the site is live on GitHub Pages; republish it only when Amir asks. Publish the output of `npm run build`: `dist/index.html` as the page itself, without its `<!doctype>`, `<html>`, `<head>` and `<body>` tags (the host adds its own), and every other file in `dist/` at its own path. From a new session, pass that URL to update the same page.
-- Each section has a plain anchor (`#netto`, `#each-100`, `#toeslagen`, `#people`, `#worth-it`, `#side-income`), so a link can open the page at one question. Keep anchors to letters, digits and hyphens: the preview host passes only plain anchors like these.
+- Each section has a plain anchor (`#netto`, `#each-100`, `#mortgage`, `#toeslagen`, `#people`, `#worth-it`, `#side-income`), so a link can open the page at one question. Keep anchors to letters, digits and hyphens: the preview host passes only plain anchors like these.
 
 ## Architecture
 
@@ -66,8 +66,9 @@ src/
     box1.ts          bracket tax
     credits.ts       algemene heffingskorting, arbeidskorting
     business.ts      zzp side income: entrepreneur deductions, mkb-winstvrijstelling, Zvw, tariefsaanpassing
-    person.ts        gross to netto for one person: salary plus optional side income
-    household.ts     sum over persons, plus toeslagen on the combined income, minus childcare costs
+    person.ts        gross to netto for one person: salary plus optional side income and a share of the eigen woning saldo
+    eigen-woning.ts  eigenwoningforfait, mortgage interest, Wet Hillen: the saldo of the own home in box 1
+    household.ts     sum over persons (fiscal partners divide the eigen woning saldo), plus toeslagen on the combined income, minus childcare costs
     marginal.ts      "of the next €100" (with toeslagen, for the household), the same at every salary for the chart, and zone detection
     toeslagen.ts     zorgtoeslag, kindgebonden budget, huurtoeslag, kinderopvangtoeslag, and where one drops at once
     side-income.ts   what side income adds and how much to set aside
@@ -80,12 +81,13 @@ src/
     main.ts          the one page: inputs, events, redraw once per frame
     state.ts         what was typed, saved in this browser; carries over the old pages' inputs
     household.ts     sections: headline answer, where each €100 goes, a card per person
+    mortgage.ts      section: what the mortgage does to income tax and toeslagen
     side-situation.ts which side income to show and who should earn it (no DOM, tested)
     side-income.ts   section: what side income leaves, how much to set aside, the chart
     toeslagen.ts     section: the toeslagen, per toeslag, and the nearest place where one drops at once
     worth-it.ts      section: is working more worth it, "of the next €100" at every salary, for one partner at a time
     view.ts          what every section needs to draw itself
-  ui/                shared: formatting, forgiving number input, sliders, job, side income and home forms, bars, 100 grid, line and area charts (chart-frame.ts: axes, crosshair, tooltip)
+  ui/                shared: formatting, forgiving number input, sliders, job, side income and home forms (children, rent or mortgage, savings), bars, 100 grid, line and area charts (chart-frame.ts: axes, crosshair, tooltip)
 index.html           the page
 prototype/           bruto-netto-2026.html, the first single-file version. Reference only, not part of the build.
 docs/                research notes: toeslagen-2026.md (partly verified), sources/ (official documents, such as the Toeslagenkaart 2026)
@@ -135,7 +137,7 @@ Side income as a zzp'er (winst uit onderneming). In the Netherlands a "second jo
 | Urencriterium | 1,225 hours a year |
 | Zelfstandigenaftrek, needs the urencriterium | €1,200, not more than the profit (except starters) |
 | Startersaftrek, starters with the urencriterium | €2,123 |
-| Tariefsaanpassing on these deductions | 11.94% on the part in the top bracket (deductions save at most 37.56%) |
+| Tariefsaanpassing on these deductions | 11.94% on the part in the top bracket (deductions save at most 37.56%); the same rule caps the mortgage deduction |
 | Zvw contribution the zzp'er pays | 4.85% of taxed profit, maximum income €79,409 including salary |
 
 - Profit = revenue minus costs, without btw. No holiday pay, no pension, nothing withheld.
@@ -150,7 +152,7 @@ Key facts to reflect in the tools:
 - Brackets and credits apply to a person's total income, not per job. Two jobs paying €39k + €15k are taxed exactly like one job paying €54k.
 - Nothing is withheld on zzp side income, so the key answer is "set aside €X per month" (extra income tax plus Zvw), or ask for a voorlopige aanslag.
 - For the rare person with two employers: only one applies the credits (loonheffingskorting), and each withholds as if its salary were the only income, so they usually pay extra at the aangifte.
-- Partners are taxed individually on salaries. Fiscal partnership only matters later (mortgage interest, box 3, deductions).
+- Partners are taxed individually on salaries. Fiscal partnership matters for the own home (partners divide its saldo, see "Mortgage 2026") and later for box 3 and other deductions.
 - Toeslagen (zorgtoeslag, huurtoeslag, kindgebonden budget, kinderopvangtoeslag) use the combined household income, so for toeslagen it does not matter which partner earns it. The rules are in "Toeslagen 2026" below.
 
 Marginal rate zones (tax on the next euro, income tax only):
@@ -238,7 +240,33 @@ How the page uses toeslagen:
 - The toeslagen section warns about the nearest place ahead where a toeslag drops at once: the zorgtoeslag limit, or a row of the kinderopvangtoeslag table.
 - "Is working more worth it?" shows "of the next €100" at every salary of one partner, with everything else as typed. Its first sentence uses the real next €100, the same number as the person card. The chart leaves the drops at once out of the curve (zorgtoeslag counts as staying at its last €24 above the limit) and marks them as ticks along the top. Kinderopvangtoeslag only goes down in steps, about one every €1,700 of income, which adds up: each step is spread evenly over its row, so the chart shows what the steps cost on average, and the section says so.
 
+## Mortgage 2026
+
+Milestone 8, first item, built on 26 September 2026 while Amir was away: the assumptions are listed in `docs/mortgage-2026.md` and still need his review. The figures come from search results quoting belastingdienst.nl, not from the site itself; check them there.
+
+| Rule | 2026 |
+|---|---|
+| Eigenwoningforfait | 0.35% of the WOZ value from €75,000 to €1,350,000; nil up to €12,500, 0.10% up to €25,000, 0.20% up to €50,000, 0.25% up to €75,000; always a percentage of the whole value |
+| Above the villagrens of €1,350,000 | €4,725 plus 2.35% of the value above it |
+| Wet Hillen | when the forfait is larger than the interest, 71.867% of the difference is deducted (76.667% in 2025, 4.8 points less every year, gone in 2041) |
+| Maximum rate of the deduction | 37.56%: in the top bracket 11.94% is added back (tariefsaanpassing), on the lower of the deduction and the income above €78,426 before it |
+
+- Saldo = forfait − mortgage interest − Hillen deduction. It is part of box 1 taxable income, so it also changes the general tax credit and the toetsingsinkomen for toeslagen. It does not change the labour tax credit (income from work) or the Zvw on side income (profit).
+- Interest per year = what is left of the loan × the interest rate. The whole loan is taken to count.
+- Fiscal partners may divide the saldo in any proportion (half each if they do not choose). The page takes the division with the least tax together: `divideSaldo` in `engine/household.ts` checks half each, all with one partner, and every division where a partner's income reaches a rate change, which is always enough because tax runs in straight lines in between.
+- A household rents or owns: adding a mortgage hides the rent, and an owner gets no huurtoeslag.
+- "What you keep" does not subtract the interest, just as it does not subtract rent. The mortgage section shows the interest, what comes back through tax and toeslagen, and the net cost.
+- Worked example: alone, €51,840 salary, WOZ €400,000, loan €300,000 at 4.0%: forfait €1,400, interest €12,000, saldo −€10,600. Box 1 tax €3,981.36 less (37.56%), general tax credit €678.19 more (6.398%): €4,659.55 a year, €388.30 a month. The interest costs €1,000 a month, €611.70 after tax.
+
 ## Test cases (must pass)
+
+Mortgage (see "Mortgage 2026" above):
+
+- Eigenwoningforfait: €1,400 at WOZ €400,000, €150 at €60,000, nil at €12,500, €8,250 at €1,500,000.
+- Wet Hillen: no mortgage and WOZ €400,000 adds €393.86 to the income.
+- The worked example: €4,659.55 less tax; the labour tax credit does not change.
+- Top bracket: €120,000 salary and a saldo of −€17,900 save exactly 37.56% (€6,723.24), after a tariefsaanpassing of €2,137.26.
+- A couple where only one earns €51,840: all of the saldo with the earner (€4,659.55 less tax, not €2,329.77 for half each); equal earners keep half each; the division is never worse than any division in steps of 1%.
 
 Toeslagen (see "Toeslagen 2026" above for the sources):
 
@@ -260,7 +288,7 @@ Income tax:
 
 ## Milestones
 
-Stop after each one for review. Status on 26 September 2026: 1 to 5 and 7 are done, 6 is dropped, 8 is next.
+Stop after each one for review. Status on 26 September 2026: 1 to 5 and 7 are done, 6 is dropped, 8 is in progress: the mortgage is built, its assumptions wait for Amir's review.
 
 The milestones were renumbered on 26 September 2026. Before that, the side income page was milestone 5, the "next €100" pages were 3 and 4, and 6 was the dropped payslip check.
 
@@ -276,7 +304,7 @@ The milestones were renumbered on 26 September 2026. Before that, the side incom
    Wide screens: inputs on the left, answers on the right. Each section gets a plain #anchor, so a link can point to one question. Saved inputs from the old pages carry over. The engine does not change. *Done:* the code is in `src/app/`. A person alone gets no heading or name field; names appear with a partner. The per-person card no longer repeats the set-aside note, the side income section has it. When both partners have side income there is nothing to compare, so the section shows each one's own and no chart. The old side income page's inputs carry over only when there are no household inputs, with the side income on the first person.
 6. ~~"Next €100" pages for one person and for a couple.~~ Dropped on 26 September 2026: with sliders and one page, dragging a salary already shows total netto growing and "of the next €100" changing for each partner. What is left, a chart across all incomes, moves to milestone 7.
 7. **Toeslagen.** Zorgtoeslag, huurtoeslag, kindgebonden budget and kinderopvangtoeslag on the combined household income. Every extra input is optional, with a sensible default: for example rent, children and their ages, childcare hours and costs, and savings for the asset test (vermogenstoets). Add "lost toeslag" as a third colour in the "next €100" bar, and show the armoedeval honestly where it occurs. Research the exact 2026 rules first, write them into this file like the tax rules above, and confirm them with Amir. Amir asked for all four at once (26 September 2026). *Done:* the rules are in "Toeslagen 2026" above, the engine in `engine/toeslagen.ts`, the inputs (children with age and optional childcare, rent, savings) in `ui/home-form.ts`, the section in `app/toeslagen.ts`. The saved inputs moved to version 3; version 2 carries over with an empty home. Still open: the huurtoeslag figures marked "not verified". The "Is working more worth it?" section (`app/worth-it.ts`) is a stacked area of kept, income tax and lost toeslag across all salaries, with a "you are here" dot; for a couple a toggle picks whose salary goes up, because the other partner's salary stays where it is. See "How the page uses toeslagen" for how it treats the drops at once.
-8. **More optional parameters.** One at a time, add the items from "Not included" below that change the answer for many people, each as an optional input that is zero or off by default: mortgage (hypotheekrenteaftrek and eigenwoningforfait), a lijfrente what-if (a deposit lowers taxable income and the toetsingsinkomen for toeslagen), savings and investments in box 3, people at AOW age, special bonus rates, and for zzp'ers business losses, KOR and investment deductions. Explain each rule first, as always, and agree the order with Amir.
+8. **More optional parameters.** One at a time, add the items from "Not included" below that change the answer for many people, each as an optional input that is zero or off by default: mortgage (hypotheekrenteaftrek and eigenwoningforfait), a lijfrente what-if (a deposit lowers taxable income and the toetsingsinkomen for toeslagen), savings and investments in box 3, people at AOW age, special bonus rates, and for zzp'ers business losses, KOR and investment deductions. Explain each rule first, as always, and agree the order with Amir. *Mortgage done* (26 September 2026, built while Amir was away): inputs WOZ value, loan and rate in the home block, `engine/eigen-woning.ts`, the section in `app/mortgage.ts`, rules in "Mortgage 2026" above. Open: the assumptions in `docs/mortgage-2026.md`, and checking the figures on belastingdienst.nl. Next item: to agree with Amir.
 
 Dropped: ~~payslip check for two jobs~~. Two employers are rare in practice, and the set-aside question for zzp side income is answered in the side income section. The engine keeps `withholding.ts`.
 
@@ -284,6 +312,6 @@ Later ideas, not now: Dutch and Persian translations, and an explanation layer w
 
 ## Not included (show this on the page until added)
 
-Mortgage interest and other deductions, box 3 savings, lijfrente, special bonus rates, business losses, KOR and investment deductions, people at AOW age (until milestone 8). For toeslagen: other people living in the home besides the partner and children, and special situations. On salary the employer pays the Zvw health contribution; on side income the zzp'er pays it, and that is included.
+Deductions besides the mortgage interest, box 3 savings, lijfrente, special bonus rates, business losses, KOR and investment deductions, people at AOW age (until milestone 8). For the mortgage: erfpacht, the costs of taking out a mortgage, part of a year, and loans that do not count as eigenwoningschuld (shown in the "Mortgage" note). For toeslagen: other people living in the home besides the partner and children, and special situations. On salary the employer pays the Zvw health contribution; on side income the zzp'er pays it, and that is included.
 
 The footer text is `common.notIncluded` in `src/i18n/en.ts`. Keep it and this list the same.

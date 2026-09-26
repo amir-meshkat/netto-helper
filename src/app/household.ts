@@ -96,7 +96,7 @@ export function renderEach100(result: HouseholdResult): void {
     </div>`;
 }
 
-function whyTable(r: PersonResult, view: View): string {
+function whyTable(r: PersonResult, two: boolean, view: View): string {
   const { rules } = view;
   const w = h.why;
   const tax = r.incomeTax;
@@ -116,6 +116,10 @@ function whyTable(r: PersonResult, view: View): string {
       rows.push(row(escapeHtml(w.profitExemption(percent(rules.entrepreneur.profitExemptionRate))), minus(b.profitExemption), "sub minus"));
     }
   }
+  if (r.woning !== 0) {
+    const label = escapeHtml(w.woning(two)) + nl(w.woningNl);
+    rows.push(r.woning < 0 ? row(label, minus(-r.woning), "minus") : row(label, `+ ${euros(r.woning)}`));
+  }
   rows.push(row(escapeHtml(w.taxable) + nl(w.taxableNl), euros(r.taxable), "sum"));
   rows.push(row(escapeHtml(w.box1), euros(tax.box1.total)));
   for (const part of tax.box1.parts.filter((x) => x.amount > 0)) {
@@ -123,7 +127,7 @@ function whyTable(r: PersonResult, view: View): string {
   }
   if (tax.topBracketAdjustment > 0) {
     const topRate = rules.box1Brackets.at(-1)?.rate ?? 0;
-    const cappedAt = percent(topRate - rules.entrepreneur.topBracketDeductionAdjustment);
+    const cappedAt = percent(topRate - rules.topBracketDeductionAdjustment);
     rows.push(row(escapeHtml(w.topBracketAdjustment(cappedAt)), `+ ${euros(tax.topBracketAdjustment)}`, "sub"));
   }
   rows.push(row(escapeHtml(w.generalCredit) + nl(w.generalCreditNl), minus(tax.generalCredit), "minus"));
@@ -139,7 +143,7 @@ function whyTable(r: PersonResult, view: View): string {
 }
 
 /** The rules in words, with the numbers taken from the rules file. */
-function whySteps(hasSide: boolean, two: boolean, view: View): string {
+function whySteps(hasSide: boolean, hasHome: boolean, two: boolean, view: View): string {
   const { rules } = view;
   const s = h.why.steps;
   const brackets = rules.box1Brackets
@@ -151,6 +155,7 @@ function whySteps(hasSide: boolean, two: boolean, view: View): string {
     s.gross,
     s.pension,
     ...(hasSide ? [s.side(percent(rules.entrepreneur.profitExemptionRate))] : []),
+    ...(hasHome ? [s.home] : []),
     s.brackets(brackets),
     s.generalCredit(euros(g.max), euros(g.phaseOutStart), percent(g.phaseOutRate)),
     ...(shrinking ? [s.labourCredit(euros(shrinking.base), euros(shrinking.from), percent(-shrinking.rate))] : []),
@@ -224,8 +229,8 @@ function personCard(r: PersonResult, next: NextSalary, p: number, two: boolean, 
       ${nextHundred(next, w)}
       <details class="why" data-key="${key}"${view.details.openIf(key)}>
         <summary>${escapeHtml(t.common.showWhy)}</summary>
-        ${whyTable(r, view)}
-        ${whySteps(r.business !== null, two, view)}
+        ${whyTable(r, two, view)}
+        ${whySteps(r.business !== null, r.woning !== 0, two, view)}
       </details>
     </article>`;
 }

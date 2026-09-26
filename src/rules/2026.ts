@@ -29,13 +29,30 @@ export const rules2026: TaxRules = {
     { from: 132_920, upTo: Infinity, base: 0, rate: 0 },
   ],
 
+  // Deductions save at most 37.56% in the top bracket: 49.50% - 37.56% = 11.94% is added back.
+  // For the eigen woning, confirmed via search of the Belastingdienst page on the tariefsaanpassing eigen woning.
+  topBracketDeductionAdjustment: 0.1194,
+
   entrepreneur: {
     hoursCriterion: 1_225,
     selfEmployedDeduction: 1_200,
     starterDeduction: 2_123,
     profitExemptionRate: 0.127,
-    // Deductions save at most 37.56% in the top bracket: 49.50% - 37.56% = 11.94% is added back.
-    topBracketDeductionAdjustment: 0.1194,
+  },
+
+  // Eigen woning 2026. Not verified on belastingdienst.nl itself (not reachable from the cloud session):
+  // from search results quoting it, see docs/mortgage-2026.md.
+  eigenWoning: {
+    forfait: [
+      { upTo: 12_500, rate: 0 },
+      { upTo: 25_000, rate: 0.001 },
+      { upTo: 50_000, rate: 0.002 },
+      { upTo: 75_000, rate: 0.0025 },
+      { upTo: 1_350_000, rate: 0.0035 },
+    ],
+    villa: { from: 1_350_000, base: 4_725, rate: 0.0235 },
+    // 76.667% in 2025, 4.8 percentage points less every year from 2026, gone in 2041.
+    hillenRate: 0.71867,
   },
 
   zvw: {

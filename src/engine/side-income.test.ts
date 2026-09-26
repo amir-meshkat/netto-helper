@@ -77,3 +77,14 @@ describe("sideIncomeCurve", () => {
     }
   });
 });
+
+describe("sideIncomeValue with a share of the eigen woning saldo", () => {
+  it("taxes the side income at the rates after the mortgage deduction", () => {
+    // 45,360 with a deduction of 10,600 is 34,760 taxable: part of the side income now falls in the first bracket.
+    const value = sideIncomeValue([job(3_500)], side, rules, -10_600);
+    const without = personNetto([job(3_500)], rules, null, -10_600);
+    const withSide = personNetto([job(3_500)], rules, side, -10_600);
+    expect(value.kept).toBeCloseTo(withSide.netto - without.netto, 6);
+    expect(value.kept).toBeGreaterThan(sideIncomeValue([job(3_500)], side, rules).kept + 50);
+  });
+});

@@ -168,6 +168,14 @@ describe("nextHundredCurve", () => {
     expect(real.lostToeslagen - (point?.lostToeslagen ?? 0)).toBeCloseTo(23.53, 2);
   });
 
+  it("counts the own home: at the current salary it gives the same as the person card", () => {
+    const home = { ...noHome, owner: { woz: 400_000, interest: 12_000 } };
+    const people = [{ jobs: [{ ...monthly(4_000), holidayPayRate: 0.08 }] }, { jobs: [monthly(1_000)] }];
+    const [point] = nextHundredCurve(people, home, 0, [4_000], rules);
+    expect(point?.income).toBeCloseTo(51_840 + 12_000 - 10_600, 6);
+    expect(point?.kept).toBeCloseTo(nextSalaryInHousehold(people, home, 0, rules).kept, 6);
+  });
+
   it("keeps the other partner's salary where it is", () => {
     const people = [{ jobs: [monthly(0)] }, { jobs: [monthly(2_000)] }];
     const [point] = nextHundredCurve(people, noHome, 0, [1_000], rules);

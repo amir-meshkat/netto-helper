@@ -40,7 +40,7 @@ export const en = {
       "Indicative only, not tax advice. Figures for 2026, for people below AOW age. Rounding can differ a few euros from the Belastingdienst.",
     notIncludedTitle: "Not included yet",
     notIncluded:
-      "Mortgage interest and other deductions, savings in box 3, lijfrente, special bonus rates, business losses, the kleineondernemersregeling (KOR), investment deductions, and people at AOW age. For toeslagen: other people living with you besides your partner and children, and special situations. On salary your employer pays the Zvw health contribution; on side income you pay it yourself, and that is included.",
+      "Deductions besides the mortgage interest, savings in box 3, lijfrente, special bonus rates, business losses, the kleineondernemersregeling (KOR), investment deductions, and people at AOW age. For toeslagen: other people living with you besides your partner and children, and special situations. On salary your employer pays the Zvw health contribution; on side income you pay it yourself, and that is included.",
     netto: "Netto: yours to keep",
     tax: "Income tax and national insurance",
     taxAndZvw: "Income tax, national insurance and Zvw",
@@ -159,6 +159,8 @@ export const en = {
       selfEmployedDeduction: "Zelfstandigenaftrek",
       starterDeduction: "Startersaftrek",
       profitExemption: (rate: string) => `Mkb-winstvrijstelling, ${rate} of the profit`,
+      woning: (two: boolean) => (two ? "Own home: share of forfait minus interest" : "Own home: forfait minus mortgage interest"),
+      woningNl: "eigen woning",
       taxable: "Taxable income",
       taxableNl: "belastbaar inkomen box 1",
       box1: "Tax and national insurance, by bracket",
@@ -188,6 +190,7 @@ export const en = {
           `Labour tax credit (arbeidskorting): grows with your income up to ${peak} at ${peakAt}, then shrinks by ${rate} of every euro above that.`,
         zvw: (rate: string, max: string) =>
           `On side income you pay the Zvw contribution yourself: ${rate} of the taxed profit. Salary counts first toward the maximum of ${max}.`,
+        home: "Own home: the eigenwoningforfait minus the mortgage interest changes the taxable income. The mortgage section shows how.",
         partners: "Partners are taxed separately, each with their own brackets and credits.",
       },
       bracketStep: (rate: string, upTo: string | null) => (upTo ? `${rate} up to ${upTo}` : `${rate} above that`),
@@ -228,7 +231,7 @@ export const en = {
       `Line chart of how much of the side income is kept per month, for salaries from zero upward. ${points}`,
     chartTooltipMain: (amount: string) => `Salary ${amount} per month`,
     chartTooltipKept: "kept per month",
-    chartSettingsOf: (p: Who) => `With ${whose(p)} holiday pay and pension`,
+    chartSettingsOf: (p: Who, home: boolean) => `With ${whose(p)} holiday pay${home ? ", pension and part of the home" : " and pension"}`,
     tableToggle: "Show the numbers as a table",
     tableMain: "Salary, gross per month",
     tableKept: "Kept from the side income, per month",
@@ -318,10 +321,52 @@ export const en = {
     tableTotal: "Total per month",
   },
 
-  /** The inputs for toeslagen: children and childcare, rent, savings. All optional. */
+  /** The own home and mortgage section: what the hypotheekrenteaftrek is worth. */
+  mortgage: {
+    title: "Your mortgage",
+    answerLower: (two: boolean) =>
+      two ? "Your mortgage lowers your household's tax by {amount} per month." : "Your mortgage lowers your tax by {amount} per month.",
+    answerHigher: "Owning your home adds {amount} per month to your tax.",
+    noEffect: "At this income the mortgage does not change your income tax: the tax credits already cover all of it.",
+    typeFirst: "Type the WOZ value, what is left of the loan and the interest rate to see what the mortgage does to your tax.",
+    cost: (interest: string, back: string, own: string, toeslagen: boolean) =>
+      `Of ${interest} interest per month, ${back} comes back through lower tax${toeslagen ? " and higher toeslagen" : ""}, so the interest costs you ${own} per month.`,
+    toeslagenUp: (amount: string) => `Toeslagen look at the income after the deduction, so they go up by ${amount} per month.`,
+    higherWhy: "The eigenwoningforfait is larger than the mortgage interest, so a small part of it is taxed as income.",
+    legendBack: "Comes back to you",
+    legendOwn: "You pay",
+    rowForfait: (rate: string) => `Imputed income for the home, ${rate} of the WOZ value (eigenwoningforfait)`,
+    rowForfaitVilla: "Imputed income for the home (eigenwoningforfait, with the rate above the villagrens)",
+    rowInterest: "Mortgage interest (hypotheekrente), loan × rate",
+    rowHillen: "Deduction for little or no mortgage (Wet Hillen)",
+    rowSaldo: "Balance in box 1",
+    rowShare: (p: Who) => (p.you ? "Your share" : `${p.name}'s share`),
+    rowTax: "Less income tax per year",
+    rowTaxMore: "More income tax per year",
+    rowToeslagen: "More toeslagen per year",
+    steps: {
+      forfait: (rate: string) =>
+        `Owning the home you live in counts as a small income in box 1: the eigenwoningforfait, ${rate} of the WOZ value for most homes.`,
+      interest: "The interest on the mortgage for the home comes off. It is usually larger than the forfait, so your taxable income goes down: that is the hypotheekrenteaftrek.",
+      cap: (max: string) => `A deduction saves at most ${max} of every euro. In the top bracket the difference is added back (tariefsaanpassing).`,
+      credit: (from: string, to: string, rate: string) =>
+        `Between ${from} and ${to} the general tax credit goes up by ${rate} of every euro of deduction, so there it saves a little more.`,
+      partners:
+        "Fiscal partners may divide the balance any way they like. The page takes the division with the least tax together, and half each when nothing is better.",
+      hillen: (rate: string) =>
+        `When the forfait is larger than the interest, ${rate} of the difference is deducted (Wet Hillen). This deduction is being phased out until 2041.`,
+    },
+    aangifte:
+      "Your employer does not know about the mortgage, so the tax comes back with the aangifte. Ask the Belastingdienst for a voorlopige aanslag to get it back every month.",
+    notesTitle: "Mortgage",
+    notes:
+      "Interest is taken as loan × rate for the whole year, and the whole loan is taken to count for the deduction (eigenwoningschuld). Not included: erfpacht, the costs of taking out a mortgage, and part of a year. A partner on this page counts as your fiscal partner. The 2026 figures for the eigenwoningforfait and the Wet Hillen come from summaries of official pages and still need checking on belastingdienst.nl.",
+  },
+
+  /** The inputs for toeslagen and the own home: children and childcare, rent or a mortgage, savings. All optional. */
   homeForm: {
-    title: "Children, rent and savings",
-    hint: "Only needed for toeslagen. Skip what does not apply.",
+    title: "Children, home and savings",
+    hint: "For toeslagen and the mortgage. Skip what does not apply.",
     addChild: "Add a child",
     childTitle: (n: number) => `Child ${n}`,
     remove: "Remove",
@@ -346,6 +391,17 @@ export const en = {
     rentHint: "Without service costs: from 2026 only the bare rent counts.",
     allYoung: "Everyone living here is 18, 19 or 20",
     allYoungHint: (limit: string) => `Then rent counts up to ${limit} per month instead of the usual limit.`,
+    addMortgage: "Add a mortgage (own home)",
+    mortgageTitle: "Own home and mortgage",
+    woz: "WOZ value of the home",
+    wozNl: "WOZ-waarde",
+    wozHint: "On the yearly letter from your municipality (WOZ-beschikking), or at wozwaardeloket.nl.",
+    loan: "Mortgage left",
+    loanNl: "hypotheekschuld",
+    rate: "Interest rate",
+    rateNl: "hypotheekrente",
+    mortgageHint:
+      "What you still owe on the loan for this home, and its interest rate per year. With several loan parts, add up the loans and use the average rate.",
     savingsMore: "Savings and investments",
     savingsNl: "vermogen",
     savingsNow: (amount: string | null) => (amount ? `Now: ${amount}` : "Now: none entered"),

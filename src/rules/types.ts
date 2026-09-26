@@ -36,11 +36,25 @@ export interface EntrepreneurRules {
   starterDeduction: number;
   /** Mkb-winstvrijstelling: this part of the profit (after the deductions above) is not taxed. */
   profitExemptionRate: number;
+}
+
+/** One band of the eigenwoningforfait: a percentage of the whole WOZ value, for values up to `upTo`. */
+export interface ForfaitBand {
+  upTo: number;
+  rate: number;
+}
+
+/** The home you live in and own (eigen woning), in box 1. */
+export interface EigenWoningRules {
+  /** Eigenwoningforfait by WOZ value, up to the villagrens. */
+  forfait: ForfaitBand[];
+  /** Above the villagrens: a fixed amount plus a higher percentage of the value above it. */
+  villa: { from: number; base: number; rate: number };
   /**
-   * Tariefsaanpassing: deductions save tax at most at a lower rate. For the part of the deductions
-   * that falls in the top bracket, this percentage is added back.
+   * Wet Hillen: when the forfait is larger than the deductible costs, this part of the difference is
+   * deducted (aftrek wegens geen of geringe eigenwoningschuld). Phased out towards 0.
    */
-  topBracketDeductionAdjustment: number;
+  hillenRate: number;
 }
 
 /** Income-dependent Zvw contribution that zzp'ers pay themselves (inkomensafhankelijke bijdrage Zvw). */
@@ -143,7 +157,14 @@ export interface TaxRules {
   box1Brackets: Box1Bracket[];
   generalCredit: GeneralCreditRules;
   labourCredit: LabourCreditSegment[];
+  /**
+   * Tariefsaanpassing: deductions save tax at most at a lower rate. For the part of the deductions
+   * that falls in the top bracket, this percentage is added back. Applies to the entrepreneur
+   * deductions and the negative saldo of the eigen woning.
+   */
+  topBracketDeductionAdjustment: number;
   entrepreneur: EntrepreneurRules;
+  eigenWoning: EigenWoningRules;
   zvw: ZvwRules;
   toeslagen: ToeslagenRules;
 }

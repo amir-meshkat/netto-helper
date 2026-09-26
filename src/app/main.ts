@@ -7,7 +7,7 @@ import { getRules } from "../rules";
 import { byId, escapeHtml, oncePerFrame, rememberOpenDetails } from "../ui/dom";
 import { floatingAnswer } from "../ui/floating-answer";
 import { handleHomeChange, handleHomeInput, homeFields } from "../ui/home-form";
-import { newCare, newChild, toEngineHome } from "../ui/home-input";
+import { newCare, newChild, newMortgage, toEngineHome } from "../ui/home-input";
 import { handleJobInput, handlePensionModeChange, jobFields } from "../ui/job-form";
 import { toEngineJob, type JobInput } from "../ui/job-input";
 import { initPage } from "../ui/page";
@@ -16,6 +16,7 @@ import { newSide, toEngineSide, type SideInput } from "../ui/side-input";
 import { linkSliders } from "../ui/slider";
 import { makeWho } from "../ui/who";
 import { miniAnswer, renderAnswer, renderEach100, renderPeople } from "./household";
+import { renderMortgage } from "./mortgage";
 import { initSideIncome, renderSideIncome } from "./side-income";
 import { renderToeslagen } from "./toeslagen";
 import { initWorthIt, renderWorthIt } from "./worth-it";
@@ -34,6 +35,7 @@ initPage({
     [t.common.couplesTitle, t.common.couples],
     [t.sideIncome.notesSideTitle, t.sideIncome.notesSide],
     [t.toeslagen.notesTitle, t.toeslagen.notes],
+    [t.mortgage.notesTitle, t.mortgage.notes],
   ],
 });
 byId("page-title").textContent = t.page.title;
@@ -134,6 +136,8 @@ function renderResults(): void {
   const total = householdTotal(people, home, rules);
   renderAnswer(total, view);
   renderEach100(total.work);
+  // The same household without its own home: what the mortgage changes.
+  renderMortgage(total, home.owner ? householdTotal(people, { ...home, owner: null }, rules) : null, view);
   renderToeslagen(total, home, view);
   renderPeople(
     total.work,
@@ -141,7 +145,11 @@ function renderResults(): void {
     view,
   );
   renderWorthIt(people, home, total, view);
-  const sit = sideSituation(state.people, rules);
+  const sit = sideSituation(
+    state.people,
+    rules,
+    total.work.people.map((p) => p.woning),
+  );
   // What the side income costs in toeslagen: the household without any side income, compared to now.
   const lostToeslagen = sit
     ? householdTotal(people.map((person) => ({ ...person, side: null })), home, rules).toeslagen.total - total.toeslagen.total
@@ -221,6 +229,13 @@ inputs.addEventListener("click", (event) => {
       break;
     case "remove-rent":
       state.home.rent = null;
+      break;
+    case "add-mortgage":
+      state.home.mortgage = newMortgage();
+      focusId = "home-woz";
+      break;
+    case "remove-mortgage":
+      state.home.mortgage = null;
       break;
     case "add-side":
       personAt(p).side = newSide();

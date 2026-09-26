@@ -6,7 +6,8 @@ import { euros, eurosCents } from "./format";
 import { CHILDCARE_KINDS, HOME_SLIDERS, isHomeInvalid, newCare, toEngineHome, type ChildInput, type HomeInput, type HomeTextKey } from "./home-input";
 import type { Unit } from "./slider";
 
-// The inputs for toeslagen: children (with optional childcare), rent, and savings. All optional.
+// The inputs for toeslagen and the own home: children (with optional childcare), rent or a mortgage, and
+// savings. All optional.
 // Text fields carry data-home (the HomeTextKey) and, for a child, data-c (the child's index).
 
 const f = t.homeForm;
@@ -19,7 +20,7 @@ function field(id: string, key: HomeTextKey, value: string, label: string, unit:
     nl: options.nl,
     unit,
     big: options.big,
-    invalid: isHomeInvalid(value),
+    invalid: isHomeInvalid(value, key),
     data: { home: key, ...(options.child === undefined ? {} : { c: String(options.child) }) },
     slider: HOME_SLIDERS[key],
   });
@@ -80,26 +81,46 @@ function rentBlock(home: HomeInput, rules: TaxRules): string {
     </div>`;
 }
 
+function mortgageBlock(home: HomeInput): string {
+  const m = home.mortgage;
+  if (!m) return "";
+  return `
+    <div class="job mortgage">
+      <div class="job-head">
+        <span class="job-title">${escapeHtml(f.mortgageTitle)}</span>
+        <button type="button" class="btn-link" data-action="remove-mortgage">${escapeHtml(f.remove)}</button>
+      </div>
+      ${field("home-woz", "woz", m.woz, f.woz, "€", { nl: f.wozNl })}
+      <p class="hint">${escapeHtml(f.wozHint)}</p>
+      <div class="grid-2">
+        ${field("home-loan", "loan", m.loan, f.loan, "€", { nl: f.loanNl })}
+        ${field("home-rate", "rate", m.rate, f.rate, "%", { nl: f.rateNl })}
+      </div>
+      <p class="hint">${escapeHtml(f.mortgageHint)}</p>
+    </div>`;
+}
+
 /** Short summary under the savings toggle, so the value is never hidden. */
 export function savingsNow(home: HomeInput): string {
   const vermogen = toEngineHome(home).vermogen;
   return f.savingsNow(vermogen > 0 ? euros(vermogen) : null);
 }
 
-/** Children, rent and savings, with buttons to add what applies. */
+/** Children, rent or a mortgage, and savings, with buttons to add what applies. A household rents or owns, not both. */
 export function homeFields(home: HomeInput, rules: TaxRules, savingsOpen: boolean): string {
   const limits = rules.toeslagen;
-  const addRent =
-    home.rent === null ? `<button type="button" class="btn-add" data-action="add-rent">${escapeHtml(f.addRent)}</button>` : "";
+  const neither = home.rent === null && home.mortgage === null;
+  const add = (action: string, label: string) => `<button type="button" class="btn-add" data-action="${action}">${escapeHtml(label)}</button>`;
   return `
     <section class="person-input home-input" aria-labelledby="home-title">
       <div class="person-head"><h3 id="home-title">${escapeHtml(f.title)}</h3></div>
       <p class="hint">${escapeHtml(f.hint)}</p>
       ${home.children.map((child, c) => childBlock(child, c, rules)).join("")}
       ${rentBlock(home, rules)}
+      ${mortgageBlock(home)}
       <div class="add-row">
-        <button type="button" class="btn-add" data-action="add-child">${escapeHtml(f.addChild)}</button>
-        ${addRent}
+        ${add("add-child", f.addChild)}
+        ${neither ? add("add-rent", f.addRent) + add("add-mortgage", f.addMortgage) : ""}
       </div>
       <details class="more" data-key="more-home"${savingsOpen ? " open" : ""}>
         <summary>${escapeHtml(f.savingsMore)} <span class="nl">(${escapeHtml(f.savingsNl)})</span><span class="details-now" id="home-savings-now">${escapeHtml(savingsNow(home))}</span></summary>
@@ -118,9 +139,10 @@ export function handleHomeInput(event: Event, home: HomeInput): boolean {
   if (key === "age" && child) child.age = el.value;
   else if ((key === "hours" || key === "price") && child?.care) child.care[key] = el.value;
   else if (key === "rent" && home.rent !== null) home.rent = el.value;
+  else if ((key === "woz" || key === "loan" || key === "rate") && home.mortgage) home.mortgage[key] = el.value;
   else if (key === "savings") home.savings = el.value;
   else return false;
-  markInvalid(el, isHomeInvalid(el.value));
+  markInvalid(el, isHomeInvalid(el.value, key));
   const now = document.getElementById("home-savings-now");
   if (now && key === "savings") now.textContent = savingsNow(home);
   return true;

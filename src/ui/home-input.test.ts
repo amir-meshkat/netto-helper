@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { getRules } from "../rules";
-import { HOME_SLIDERS, isHomeInput, newCare, newChild, newHome, toEngineHome, type HomeTextKey } from "./home-input";
+import { HOME_SLIDERS, isHomeInput, newCare, newChild, newHome, newMortgage, toEngineHome, type HomeTextKey } from "./home-input";
 import { parseNumber } from "./parse";
 import { sliderPosition, sliderText } from "./slider-range";
 
@@ -8,7 +8,16 @@ const rules = getRules(2026);
 
 describe("toEngineHome", () => {
   it("starts with no children, no rent and no savings", () => {
-    expect(toEngineHome(newHome())).toEqual({ vermogen: 0, children: [], rent: null, allYoung: false });
+    expect(toEngineHome(newHome())).toEqual({ vermogen: 0, children: [], rent: null, owner: null, allYoung: false });
+  });
+
+  it("turns a mortgage into an own home: interest is loan times rate, and a rent no longer counts", () => {
+    const home = { ...newHome(), rent: "800", mortgage: { woz: "400.000", loan: "€ 300.000", rate: "3,8" } };
+    const engine = toEngineHome(home);
+    expect(engine.owner?.woz).toBe(400_000);
+    expect(engine.owner?.interest).toBeCloseTo(11_400, 6);
+    expect(engine.rent).toBeNull();
+    expect(toEngineHome({ ...newHome(), mortgage: newMortgage() }).owner).toEqual({ woz: 0, interest: 0 });
   });
 
   it("reads typed text the forgiving way", () => {
@@ -25,6 +34,7 @@ describe("toEngineHome", () => {
     expect(toEngineHome(home)).toEqual({
       vermogen: 12_500,
       rent: 850,
+      owner: null,
       allYoung: true,
       children: [
         { age: 3, care: { kind: "dagopvang", hoursPerMonth: 120, pricePerHour: 10.75 } },
@@ -49,11 +59,20 @@ describe("toEngineHome", () => {
 });
 
 describe("HOME_SLIDERS", () => {
-  const keys: HomeTextKey[] = ["age", "hours", "price", "rent", "savings"];
+  const keys: HomeTextKey[] = ["age", "hours", "price", "rent", "savings", "woz", "loan", "rate"];
 
   it("covers the defaults without clamping them", () => {
     const care = newCare(rules);
-    const defaults: Record<HomeTextKey, string> = { age: newChild().age, hours: care.hours, price: care.price, rent: "800", savings: newHome().savings };
+    const defaults: Record<HomeTextKey, string> = {
+      age: newChild().age,
+      hours: care.hours,
+      price: care.price,
+      rent: "800",
+      savings: newHome().savings,
+      woz: "400000",
+      loan: "300000",
+      rate: "3.8",
+    };
     for (const key of keys) expect(sliderPosition(defaults[key], HOME_SLIDERS[key])).toBe(parseNumber(defaults[key]));
   });
 

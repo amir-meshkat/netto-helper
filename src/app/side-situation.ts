@@ -23,6 +23,8 @@ export interface OneSideIncome {
   /** Everyone's salary, and the value of the side income to each of them. */
   mains: Job[];
   values: SideIncomeValue[];
+  /** Everyone's share of the eigen woning saldo, as divided now. */
+  woning: number[];
   /** Who keeps more of it; null for one person, or when the difference hardly matters. */
   better: number | null;
   /** Extra netto per month when the better person earns it. */
@@ -41,8 +43,11 @@ export interface EachSideIncome {
 
 export type SideSituation = OneSideIncome | EachSideIncome;
 
-/** Null when nobody has side income with a profit yet. */
-export function sideSituation(people: PersonInput[], rules: TaxRules): SideSituation | null {
+/**
+ * Null when nobody has side income with a profit yet. `woning` is each person's share of the eigen
+ * woning saldo as the household divides it now; it stays the same whoever earns the side income.
+ */
+export function sideSituation(people: PersonInput[], rules: TaxRules, woning: number[] = []): SideSituation | null {
   const mains = people.map((p) => toEngineJob(p.job));
   const owned = people.flatMap((p, i) => {
     const side = p.side ? toEngineSide(p.side) : null;
@@ -58,15 +63,15 @@ export function sideSituation(people: PersonInput[], rules: TaxRules): SideSitua
       kind: "each",
       owners: owned.map((o) => o.i),
       sides: owned.map((o) => o.side),
-      values: owned.map((o) => sideIncomeValue([o.main], o.side, rules)),
+      values: owned.map((o) => sideIncomeValue([o.main], o.side, rules, woning[o.i] ?? 0)),
     };
   }
 
-  const values = mains.map((main) => sideIncomeValue([main], first.side, rules));
+  const values = mains.map((main, i) => sideIncomeValue([main], first.side, rules, woning[i] ?? 0));
   const [a = 0, b = 0] = values.map((v) => v.kept / 12);
   const difference = values.length > 1 ? Math.abs(a - b) : 0;
   const better = values.length < 2 || difference < HARDLY_MATTERS ? null : b > a ? 1 : 0;
-  return { kind: "one", owner: first.i, side: first.side, mains, values, better, difference };
+  return { kind: "one", owner: first.i, side: first.side, mains, values, woning: mains.map((_, i) => woning[i] ?? 0), better, difference };
 }
 
 /** Household netto per year if person `i` earned the one side income, and the other partner did not. */

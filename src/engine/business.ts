@@ -70,5 +70,5 @@ export function zvwContribution(taxableProfit: number, salary: number, rules: Ta
 export function topBracketAdjustment(deductions: number, incomeBeforeDeductions: number, rules: TaxRules): number {
   const topStart = rules.box1Brackets.at(-2)?.upTo ?? Infinity;
   const inTopBracket = Math.max(0, incomeBeforeDeductions - topStart);
-  return rules.entrepreneur.topBracketDeductionAdjustment * Math.min(Math.max(0, deductions), inTopBracket);
+  return rules.topBracketDeductionAdjustment * Math.min(Math.max(0, deductions), inTopBracket);
 }

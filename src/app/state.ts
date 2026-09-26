@@ -65,7 +65,10 @@ export function parseSavedState(raw: string | null): HouseholdState | null {
   if (!arePeople(state.people)) return null;
   // Saved before the toeslagen: keep the people, start with an empty home.
   if (state.version === 2) return { version: 3, people: state.people, home: newHome() };
-  if (state.version === 3 && isHomeInput(state.home)) return { version: 3, people: state.people, home: state.home };
+  // Saved before the mortgage: the same version, without the mortgage field.
+  if (state.version === 3 && isHomeInput(state.home)) {
+    return { version: 3, people: state.people, home: { ...state.home, mortgage: state.home.mortgage ?? null } };
+  }
   return null;
 }
 
