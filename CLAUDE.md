@@ -77,7 +77,6 @@ src/
     landing/         index.html: quick answer and the tools as questions
     household/       milestone 2
     side-income/     milestone 3
-    next-100/        milestones 5 and 6 (not built yet)
   ui/                shared: formatting, forgiving number input, sliders, job and side income forms, bars, 100 grid, line chart
 index.html, household/index.html, side-income/index.html   one HTML entry per page
 prototype/           bruto-netto-2026.html, the first single-file version. Reference only, not part of the build.
@@ -172,7 +171,7 @@ Compute these from the rules, do not hard code them. The table is for testing.
 
 ## Milestones
 
-Stop after each one for review. Status on 26 September 2026: 1 to 4 are done. Open question to Amir: keep 5 and 6 as separate pages, or fold them into the household page.
+Stop after each one for review. Status on 26 September 2026: 1 to 4 are done, 5 is next.
 
 The milestones were renumbered on 26 September 2026. Before that, the side income page was milestone 5, the "next €100" pages were 3 and 4, and 6 was the dropped payslip check.
 
@@ -180,9 +179,14 @@ The milestones were renumbered on 26 September 2026. Before that, the side incom
 2. **Household page.** Port the prototype (now `prototype/bruto-netto-2026.html`) to this structure. One or two people, each with a salary and optional zzp side income. Inputs per job: monthly gross, holiday %, year-end %, pension (payslip amount or % and franchise). Output: household netto per month first, then per person breakdown with "Show me why". *Done.*
 3. **Side income page (zzp).** For one person: what is left of the side income and how much to set aside per month. For a couple: which partner should earn it ("€X more per month with B"). Chart of netto kept from the side income against salary, with both partners marked. *Done.*
 4. **Sliders for every number.** Every number a person enters gets a slider next to its text box: salary first, then side income revenue and costs, holiday pay, bonus and pension. Dragging updates every result on the page in real time; typing moves the slider. The slider covers the usual range (for example a salary of €0 to €10,000 per month); a typed value outside it still counts, and the slider then waits at its end. One shared component in `ui/` for the landing, household and side income pages. It must work with touch, mouse and keyboard, in right to left layouts, and stay smooth on a phone (redraw at most once per frame). *Done:* `ui/slider.ts` writes a dragged value into the text box and fires the box's input event, so pages handle it exactly like typing. The ranges are `JOB_SLIDERS` in `ui/job-input.ts` and `SIDE_SLIDERS` in `ui/side-input.ts`.
-5. **"Next €100", one person.** One slider for gross salary, built on the milestone 4 slider. Top: total netto bar that always grows. Below: "Of the next €100 you keep €X" bar that changes by zone. Optional traffic light band (green, orange, red zones) with a "you are here" marker.
-6. **"Next €100", couple.** Two sliders, one per partner, each with its own zone marker, and the household total.
-7. **Toeslagen.** Zorgtoeslag, huurtoeslag, kindgebonden budget and kinderopvangtoeslag on the combined household income. Every extra input is optional, with a sensible default: for example rent, children and their ages, childcare hours and costs, and savings for the asset test (vermogenstoets). Add "lost toeslag" as a third colour in the "next €100" bar, and show the armoedeval honestly where it occurs. Research the exact 2026 rules first, write them into this file like the tax rules above, and confirm them with Amir. Build one toeslag at a time, starting with zorgtoeslag because its hard income limit causes the armoedeval.
+5. **One page for everything.** Amir's idea, 26 September 2026. Replace the landing, household and side income pages with one page and one set of inputs, so a person types their situation once and every answer uses it. Today the side income page copies the household inputs once and then drifts apart; this ends that. The page opens as simple as the landing page is now: one salary with its slider, and one answer. Adding a partner or side income adds its inputs and the answer sections that need them, each with its own one-sentence answer, one visual and "Show me why":
+   - Household netto per month (the headline) and where each €100 goes.
+   - Per person: netto and "of the next €100".
+   - Side income, when someone has it: how much to set aside per month, and with a partner, how much more or less it would be worth if the other partner earned it, with the chart against salary.
+
+   Wide screens: inputs on the left, answers on the right. Each section gets a plain #anchor, so a link can point to one question. Saved inputs from the old pages carry over. The engine does not change.
+6. ~~"Next €100" pages for one person and for a couple.~~ Dropped on 26 September 2026: with sliders and one page, dragging a salary already shows total netto growing and "of the next €100" changing for each partner. What is left, a chart across all incomes, moves to milestone 7.
+7. **Toeslagen.** Zorgtoeslag, huurtoeslag, kindgebonden budget and kinderopvangtoeslag on the combined household income. Every extra input is optional, with a sensible default: for example rent, children and their ages, childcare hours and costs, and savings for the asset test (vermogenstoets). Add "lost toeslag" as a third colour in the "next €100" bar, and show the armoedeval honestly where it occurs. Research the exact 2026 rules first, write them into this file like the tax rules above, and confirm them with Amir. Build one toeslag at a time, starting with zorgtoeslag because its hard income limit causes the armoedeval. Then add the "Is working more worth it?" section: a chart of "of the next €100" across all incomes, with the tax zones and lost toeslag in colour and a "you are here" dot for each partner.
 8. **More optional parameters.** One at a time, add the items from "Not included" below that change the answer for many people, each as an optional input that is zero or off by default: mortgage (hypotheekrenteaftrek and eigenwoningforfait), a lijfrente what-if (a deposit lowers taxable income and the toetsingsinkomen for toeslagen), savings and investments in box 3, people at AOW age, special bonus rates, and for zzp'ers business losses, KOR and investment deductions. Explain each rule first, as always, and agree the order with Amir.
 
 Dropped: ~~payslip check for two jobs~~. Two employers are rare in practice, and the set-aside question for zzp side income is answered on the side income page. The engine keeps `withholding.ts`.
