@@ -4,7 +4,7 @@ import { byId, escapeHtml } from "./dom";
 interface PageOptions {
   /** Page title for the browser tab. Leave out on the landing page. */
   title?: string;
-  /** Relative link back to the landing page, for example "../". Leave out on the landing page. */
+  /** Relative link back to the landing page, for example "../index.html". Leave out on the landing page. */
   homeHref?: string;
   /** Extra notes shown above the standard footer text, as [title, text] pairs. */
   notes?: [string, string][];
@@ -16,7 +16,7 @@ export function initPage({ title, homeHref, notes = [] }: PageOptions = {}): voi
   document.documentElement.dir = t.meta.dir;
   document.title = title ? `${title} | ${t.meta.siteName}` : t.meta.siteName;
 
-  const home = homeHref ?? "./";
+  const home = homeHref ?? "./index.html";
   byId("site-header").innerHTML = `
     <a class="brand" href="${home}"><span class="brand-mark" aria-hidden="true">€</span>${escapeHtml(t.meta.siteName)}</a>
     ${homeHref ? `<a class="home-link" href="${homeHref}">${escapeHtml(t.common.homeLink)}</a>` : ""}`;

@@ -12,8 +12,14 @@ import { loadState, saveState } from "../household/state";
 
 const rules = getRules(2026);
 const l = t.landing;
-/** Tools that exist already, with their relative link. The others show "Coming soon". */
-const LIVE_TOOLS: Record<string, string> = { household: "household/", "side-income": "side-income/" };
+/**
+ * Tools that exist already, with their relative link. The others show "Coming soon".
+ * Links name index.html, because not every host opens a folder's index page (the preview host may not).
+ */
+const LIVE_TOOLS: Record<string, string> = {
+  household: "household/index.html",
+  "side-income": "side-income/index.html",
+};
 
 initPage();
 

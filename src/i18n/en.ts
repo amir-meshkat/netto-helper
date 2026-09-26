@@ -44,7 +44,7 @@ export const en = {
       "Indicative only, not tax advice. Figures for 2026, for people below AOW age. Rounding can differ a few euros from the Belastingdienst.",
     notIncludedTitle: "Not included yet",
     notIncluded:
-      "Toeslagen, mortgage interest and other deductions, savings in box 3, lijfrente, special bonus rates, business losses, and people at AOW age. On salary your employer pays the Zvw health contribution; on side income you pay it yourself, and that is included.",
+      "Toeslagen, mortgage interest and other deductions, savings in box 3, lijfrente, special bonus rates, business losses, the kleineondernemersregeling (KOR), investment deductions, and people at AOW age. On salary your employer pays the Zvw health contribution; on side income you pay it yourself, and that is included.",
     netto: "Netto: yours to keep",
     tax: "Income tax and national insurance",
     taxAndZvw: "Income tax, national insurance and Zvw",
@@ -282,8 +282,7 @@ export const en = {
     ],
 
     notesSideTitle: "Side income",
-    notesSide:
-      "Amounts are without btw. Business losses, the kleineondernemersregeling (KOR), investment deductions and pension saving (lijfrente, FOR) are not included yet.",
+    notesSide: "Amounts are without btw.",
     toeslagenTitle: "Toeslagen",
     toeslagen:
       "For toeslagen (huurtoeslag, zorgtoeslag, kindgebonden budget) the combined household income counts, so there it does not matter who earns the side income. Toeslagen are not included on this site yet.",

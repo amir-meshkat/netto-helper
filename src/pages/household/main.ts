@@ -24,7 +24,7 @@ const h = t.household;
 const state = loadState();
 const details = rememberOpenDetails();
 
-initPage({ title: h.title, homeHref: "../", notes: [[t.common.couplesTitle, t.common.couples]] });
+initPage({ title: h.title, homeHref: "../index.html", notes: [[t.common.couplesTitle, t.common.couples]] });
 byId("page-title").textContent = h.title;
 byId("page-intro").textContent = h.intro;
 byId("inputs-title").textContent = h.inputsTitle;

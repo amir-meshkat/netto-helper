@@ -30,7 +30,7 @@ const HARDLY_MATTERS = 5;
 
 initPage({
   title: s.title,
-  homeHref: "../",
+  homeHref: "../index.html",
   notes: [
     [s.notesSideTitle, s.notesSide],
     [s.toeslagenTitle, s.toeslagen],
