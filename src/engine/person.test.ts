@@ -143,3 +143,21 @@ describe("personNetto with a share of the eigen woning saldo", () => {
     expect(personNetto([job(500)], rules, null, -20_000).taxable).toBe(0);
   });
 });
+
+describe("personNetto with a lijfrente deduction", () => {
+  const job = (monthly: number): Job => ({ monthlyGross: monthly, holidayPayRate: 0, yearEndBonusRate: 0, pension: NO_PENSION });
+
+  it("lowers taxable income, not income from work, and saves the full 49.50% in the top bracket", () => {
+    const without = personNetto([job(10_000)], rules);
+    const withLijfrente = personNetto([job(10_000)], rules, null, 0, 1_000);
+    expect(withLijfrente.taxable).toBeCloseTo(119_000, 6);
+    expect(withLijfrente.incomeTax.workIncome).toBeCloseTo(120_000, 6);
+    expect(without.tax - withLijfrente.tax).toBeCloseTo(495, 6);
+  });
+
+  it("leaves less room in the top bracket for the tariefsaanpassing on the mortgage", () => {
+    // 80,000 - 1,000 lijfrente - 78,426 = 574 of the mortgage deduction falls in the top bracket.
+    const r = personNetto([job(80_000 / 12)], rules, null, -10_000, 1_000);
+    expect(r.incomeTax.topBracketAdjustment).toBeCloseTo(0.1194 * 574, 6);
+  });
+});

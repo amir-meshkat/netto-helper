@@ -57,6 +57,23 @@ export interface EigenWoningRules {
   hillenRate: number;
 }
 
+/**
+ * Lijfrente: premiums for your own pension come off box 1 income, up to the jaarruimte:
+ * rate × (income from work, up to maxIncome, minus the franchise) − factorAMultiplier × factor A.
+ */
+export interface LijfrenteRules {
+  rate: number;
+  /** AOW-franchise: the part of the income without room. */
+  franchise: number;
+  /** Income above this counts no more (maximum premiegrondslag plus franchise). */
+  maxIncome: number;
+  /** Factor A is the pension built at work last year; this many times it comes off the room. */
+  factorAMultiplier: number;
+  maxJaarruimte: number;
+  /** Unused jaarruimte of the ten years before, at most this much. Only shown as text. */
+  maxReserveringsruimte: number;
+}
+
 /** Income-dependent Zvw contribution that zzp'ers pay themselves (inkomensafhankelijke bijdrage Zvw). */
 export interface ZvwRules {
   rate: number;
@@ -165,6 +182,7 @@ export interface TaxRules {
   topBracketDeductionAdjustment: number;
   entrepreneur: EntrepreneurRules;
   eigenWoning: EigenWoningRules;
+  lijfrente: LijfrenteRules;
   zvw: ZvwRules;
   toeslagen: ToeslagenRules;
 }

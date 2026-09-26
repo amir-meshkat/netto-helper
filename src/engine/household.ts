@@ -8,6 +8,8 @@ import { toeslagen, type Child, type ToeslagHousehold, type ToeslagenResult } fr
 export interface PersonIncome {
   jobs: Job[];
   side?: SideIncome | null;
+  /** A lijfrente premium that fits in this person's jaarruimte, for the what-if. */
+  lijfrente?: number;
 }
 
 export interface HouseholdResult {
@@ -28,7 +30,7 @@ export interface HouseholdResult {
  */
 export function householdNetto(people: PersonIncome[], rules: TaxRules, saldo = 0): HouseholdResult {
   const shares = divideSaldo(people, saldo, rules);
-  const results = people.map((person, i) => personNetto(person.jobs, rules, person.side ?? null, shares[i] ?? 0));
+  const results = people.map((person, i) => personNetto(person.jobs, rules, person.side ?? null, shares[i] ?? 0, person.lijfrente ?? 0));
   const total = (pick: (p: PersonResult) => number) => results.reduce((sum, p) => sum + pick(p), 0);
   return {
     people: results,
@@ -51,7 +53,7 @@ export function householdNetto(people: PersonIncome[], rules: TaxRules, saldo = 
 export function divideSaldo(people: PersonIncome[], saldo: number, rules: TaxRules): number[] {
   const [a, b] = people;
   if (!a || !b || saldo === 0) return people.map((_, i) => (i === 0 ? saldo : 0));
-  const person = (p: PersonIncome) => (share: number) => personNetto(p.jobs, rules, p.side ?? null, share);
+  const person = (p: PersonIncome) => (share: number) => personNetto(p.jobs, rules, p.side ?? null, share, p.lijfrente ?? 0);
   const taxA = person(a);
   const taxB = person(b);
   const lo = Math.min(0, saldo);

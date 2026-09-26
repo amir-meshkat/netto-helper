@@ -16,6 +16,7 @@ import { newSide, toEngineSide, type SideInput } from "../ui/side-input";
 import { linkSliders } from "../ui/slider";
 import { makeWho } from "../ui/who";
 import { miniAnswer, renderAnswer, renderEach100, renderPeople } from "./household";
+import { initLowerTax, renderLowerTax } from "./lower-tax";
 import { renderMortgage } from "./mortgage";
 import { initSideIncome, renderSideIncome } from "./side-income";
 import { renderToeslagen } from "./toeslagen";
@@ -36,6 +37,7 @@ initPage({
     [t.sideIncome.notesSideTitle, t.sideIncome.notesSide],
     [t.toeslagen.notesTitle, t.toeslagen.notes],
     [t.mortgage.notesTitle, t.mortgage.notes],
+    [t.lowerTax.notesTitle, t.lowerTax.notes],
   ],
 });
 byId("page-title").textContent = t.page.title;
@@ -155,6 +157,7 @@ function renderResults(): void {
     ? householdTotal(people.map((person) => ({ ...person, side: null })), home, rules).toeslagen.total - total.toeslagen.total
     : 0;
   renderSideIncome(sit, view, lostToeslagen);
+  renderLowerTax(people, home, total, state, view);
   setMini(miniAnswer(total));
 }
 
@@ -166,6 +169,7 @@ function update(): void {
 /** For typing and dragging: many events, one redraw per frame. */
 const updateSoon = oncePerFrame(update);
 linkSliders();
+initLowerTax(state, updateSoon);
 
 // ---------- events ----------
 

@@ -40,7 +40,7 @@ export const en = {
       "Indicative only, not tax advice. Figures for 2026, for people below AOW age. Rounding can differ a few euros from the Belastingdienst.",
     notIncludedTitle: "Not included yet",
     notIncluded:
-      "Deductions besides the mortgage interest, savings in box 3, lijfrente, special bonus rates, business losses, the kleineondernemersregeling (KOR), investment deductions, and people at AOW age. For toeslagen: other people living with you besides your partner and children, and special situations. On salary your employer pays the Zvw health contribution; on side income you pay it yourself, and that is included.",
+      "Deductions besides the mortgage interest and a lijfrente, savings in box 3, reserveringsruimte for a lijfrente, special bonus rates, business losses, the kleineondernemersregeling (KOR), investment deductions, and people at AOW age. For toeslagen: other people living with you besides your partner and children, and special situations. On salary your employer pays the Zvw health contribution; on side income you pay it yourself, and that is included.",
     netto: "Netto: yours to keep",
     tax: "Income tax and national insurance",
     taxAndZvw: "Income tax, national insurance and Zvw",
@@ -361,6 +361,69 @@ export const en = {
     notesTitle: "Mortgage",
     notes:
       "Interest is taken as loan × rate for the whole year, and the whole loan is taken to count for the deduction (eigenwoningschuld). Not included: erfpacht, the costs of taking out a mortgage, and part of a year. A partner on this page counts as your fiscal partner. The 2026 figures for the eigenwoningforfait and the Wet Hillen come from summaries of official pages and still need checking on belastingdienst.nl.",
+  },
+
+  /** "What could lower your tax?": what-if options, worked out on the situation typed. Lijfrente first. */
+  lowerTax: {
+    title: "What could lower your tax?",
+    intro: "Options you could choose, worked out on your situation. They do not change the answers above unless you do them.",
+    lijfrente: {
+      title: "Save for your pension yourself",
+      titleNl: "lijfrente",
+      answerOne: (deposit: string) => `Putting ${deposit} in a lijfrente gives you {amount} back this year.`,
+      answerBetter: (deposit: string, better: Who, otherBack: string, other: Who) =>
+        `Putting ${deposit} in a lijfrente gives the most back with ${better.inSentence}: {amount} this year, against ${otherBack} with ${other.inSentence}.`,
+      answerEither: (deposit: string) => `Putting ${deposit} in a lijfrente gives about {amount} back this year, with either of you.`,
+      answerType: "Type an amount to see what a lijfrente gives back.",
+      split: (tax: string, toeslagen: string | null, cost: string) =>
+        `That is ${tax} less income tax${toeslagen ? ` and ${toeslagen} more toeslagen` : ""}, so it costs you ${cost} now.`,
+      room: (p: Who | null, room: string) =>
+        p ? `${p.name} can put in up to ${room} this year (jaarruimte).` : `You can put in up to ${room} this year (jaarruimte).`,
+      noRoom: (p: Who | null) =>
+        p ? `${p.name} has no room for a lijfrente this year (jaarruimte €0).` : "You have no room for a lijfrente this year (jaarruimte €0).",
+      noRoomAll: "Neither of you has room for a lijfrente this year (jaarruimte €0).",
+      aboveRoom: (p: Who, room: string) =>
+        `Only ${room} counts for ${p.inSentence} this year: the rest is above the jaarruimte. Room left unused in the ten years before (reserveringsruimte) can add more; that is not included.`,
+      factorAWarning: (p: Who) =>
+        `${p.you ? "You build" : `${p.name} builds`} pension at work, so the jaarruimte is lower than shown. Type factor A from the pension overview (UPO) below.`,
+      bar: (p: Who, back: string, deposit: string) => `With ${p.inSentence}: ${back} back of ${deposit}`,
+      legendBack: "Comes back this year",
+      legendOwn: "You pay now",
+      later:
+        "The money stays locked until your pension. You pay income tax on it when it is paid out, usually at a lower rate after AOW age: a lijfrente moves tax to later.",
+      deposit: "What if you put in, per year",
+      depositNl: "lijfrentepremie",
+      factorAMore: "Pension at work (factor A)",
+      factorANow: (values: string) => `Now: ${values}`,
+      factorANone: "none entered",
+      factorA: (p: Who | null) => (p ? `Factor A, ${p.name}` : "Factor A"),
+      factorAHint:
+        "On the yearly pension overview (UPO) from your pension fund. It is the pension you built at work last year, and it lowers the room for a lijfrente. Leave it empty without a pension at work.",
+      why: {
+        income: "Income from work: salary after pension premium, plus profit before the zzp deductions",
+        franchise: "Minus the AOW-franchise",
+        base: "Premiegrondslag",
+        rate: (rate: string) => `${rate} of it`,
+        factorA: (multiplier: string) => `Minus ${multiplier} × factor A`,
+        room: "Jaarruimte this year",
+        deductible: "Comes off the taxable income",
+        tax: "Less income tax",
+        toeslagen: "More toeslagen",
+        back: "Back this year",
+        steps: {
+          deduction: "The deposit comes off your taxable income in box 1, as long as it fits in the jaarruimte.",
+          rate: (top: string) =>
+            `It saves tax at your own rate, up to ${top} in the top bracket. Unlike the mortgage interest, this deduction is not capped.`,
+          credit: (from: string, to: string, rate: string) =>
+            `It also lowers the income that the general tax credit and the toeslagen look at: between ${from} and ${to} it saves ${rate} more, and toeslagen can go up.`,
+          room: (rate: string, franchise: string, max: string, multiplier: string) =>
+            `The jaarruimte is ${rate} of last year's income from work above ${franchise} (counting income up to ${max}), minus ${multiplier} × factor A. The page uses the income you typed now.`,
+        },
+      },
+    },
+    notesTitle: "Lijfrente",
+    notes:
+      "The lijfrente what-if uses the income typed now for last year's income. Not included: reserveringsruimte, and the tax when the lijfrente is paid out. The 2026 jaarruimte figures come from summaries of official pages and still need checking on belastingdienst.nl.",
   },
 
   /** The inputs for toeslagen and the own home: children and childcare, rent or a mortgage, savings. All optional. */

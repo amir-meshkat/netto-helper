@@ -52,7 +52,7 @@ If Amir prefers C# later, the engine is small enough to port. Keep it free of UI
 - Live site: https://amir-meshkat.github.io/netto-helper/ (GitHub Pages, from 26 September 2026). Every push to `main` goes live: `.github/workflows/deploy.yml` runs the tests and the build (which includes the typecheck) and publishes `dist/`. A failing test stops the deploy. Pages is switched on in the repository settings with Source "GitHub Actions". The site is public: anything pushed to `main` is visible to everyone within minutes.
 - Amir gets the code on his laptop with `git pull`. `.claude/launch.json` starts the dev server there; it holds the Windows path to node.exe, so it only works on his laptop.
 - Preview: https://claude.ai/artifact/LBHZ7e7fuGpw1gD4fpX1yr, shared by link. Optional now that the site is live on GitHub Pages; republish it only when Amir asks. Publish the output of `npm run build`: `dist/index.html` as the page itself, without its `<!doctype>`, `<html>`, `<head>` and `<body>` tags (the host adds its own), and every other file in `dist/` at its own path. From a new session, pass that URL to update the same page.
-- Each section has a plain anchor (`#netto`, `#each-100`, `#mortgage`, `#toeslagen`, `#people`, `#worth-it`, `#side-income`), so a link can open the page at one question. Keep anchors to letters, digits and hyphens: the preview host passes only plain anchors like these.
+- Each section has a plain anchor (`#netto`, `#each-100`, `#mortgage`, `#toeslagen`, `#people`, `#worth-it`, `#side-income`, `#lower-tax`), so a link can open the page at one question. Keep anchors to letters, digits and hyphens: the preview host passes only plain anchors like these.
 
 ## Architecture
 
@@ -68,6 +68,7 @@ src/
     business.ts      zzp side income: entrepreneur deductions, mkb-winstvrijstelling, Zvw, tariefsaanpassing
     person.ts        gross to netto for one person: salary plus optional side income and a share of the eigen woning saldo
     eigen-woning.ts  eigenwoningforfait, mortgage interest, Wet Hillen: the saldo of the own home in box 1
+    lijfrente.ts     jaarruimte, and what a lijfrente deposit gives back through tax and toeslagen (what-if)
     household.ts     sum over persons (fiscal partners divide the eigen woning saldo), plus toeslagen on the combined income, minus childcare costs
     marginal.ts      "of the next €100" (with toeslagen, for the household), the same at every salary for the chart, and zone detection
     toeslagen.ts     zorgtoeslag, kindgebonden budget, huurtoeslag, kinderopvangtoeslag, and where one drops at once
@@ -86,11 +87,12 @@ src/
     side-income.ts   section: what side income leaves, how much to set aside, the chart
     toeslagen.ts     section: the toeslagen, per toeslag, and the nearest place where one drops at once
     worth-it.ts      section: is working more worth it, "of the next €100" at every salary, for one partner at a time
+    lower-tax.ts     section: what could lower your tax, what-if options with their own inputs; lijfrente first
     view.ts          what every section needs to draw itself
   ui/                shared: formatting, forgiving number input, sliders, job, side income and home forms (children, rent or mortgage, savings), bars, 100 grid, line and area charts (chart-frame.ts: axes, crosshair, tooltip)
 index.html           the page
 prototype/           bruto-netto-2026.html, the first single-file version. Reference only, not part of the build.
-docs/                research notes: toeslagen-2026.md (partly verified), sources/ (official documents, such as the Toeslagenkaart 2026)
+docs/                research notes: toeslagen-2026.md (partly verified), mortgage-2026.md and lijfrente-2026.md (with assumptions to discuss), sources/ (official documents, such as the Toeslagenkaart 2026)
 ```
 
 Tools are started with `node node_modules/...` in package.json, because group policy on Amir's laptop blocks the `.cmd` shims in node_modules/.bin. Use `npm test` and `npm run dev`, not `npx`.
@@ -258,7 +260,30 @@ Milestone 8, first item, built on 26 September 2026 while Amir was away: the ass
 - "What you keep" does not subtract the interest, just as it does not subtract rent. The mortgage section shows the interest, what comes back through tax and toeslagen, and the net cost.
 - Worked example: alone, €51,840 salary, WOZ €400,000, loan €300,000 at 4.0%: forfait €1,400, interest €12,000, saldo −€10,600. Box 1 tax €3,981.36 less (37.56%), general tax credit €678.19 more (6.398%): €4,659.55 a year, €388.30 a month. The interest costs €1,000 a month, €611.70 after tax.
 
+## Lijfrente 2026 (what could lower your tax)
+
+Milestone 8, second item (26 September 2026): Amir asked for options that could reduce tax, starting with lijfrente, in a what-if section. The figures come from search results quoting belastingdienst.nl and pension providers; check them there. Assumptions to discuss are in `docs/lijfrente-2026.md`.
+
+| Rule | 2026 |
+|---|---|
+| Jaarruimte | 30% × (last year's income from work, counted up to €137,800, minus the AOW-franchise of €19,172) − 6.27 × factor A; never below 0, at most €35,589 |
+| Income from work for this | salary after the employee pension premium, plus profit before the zzp deductions; not the own home |
+| Factor A | the pension built at work last year, on the pension overview (UPO) |
+| Deduction | the deposit within the jaarruimte comes off box 1 taxable income, at the full rate: no tariefsaanpassing |
+| Reserveringsruimte | unused room of the ten years before, at most €42,753: not included |
+
+- The deduction lowers the income for the general tax credit and the toetsingsinkomen, so toeslagen can go up. The labour tax credit does not change.
+- It is a what-if: the headline and the other sections do not change. The section "What could lower your tax?" (`#lower-tax`) has its own inputs: the deposit per year (saved, example €1,000) and factor A per person (optional; a warning shows when someone has a pension premium at work and no factor A).
+- The page uses the income typed now for last year's income. The tax when the lijfrente is paid out is not calculated; the page says it moves tax to later and the money is locked until the pension.
+- Worked example: alone, €38,880, €1,000 in: jaarruimte €5,912.40; box 1 tax €357.50 less (35.75%), general tax credit €63.98 more, zorgtoeslag €137.30 more: €558.78 back, so it costs €441.22.
+
 ## Test cases (must pass)
+
+Lijfrente (see "Lijfrente 2026" above):
+
+- Jaarruimte: €5,912.40 at €38,880, €9,800.40 at €51,840, €3,530.40 with factor A €1,000, nothing with factor A €2,000, €35,588.40 above €137,800, nothing below the franchise, €8,912.40 with €10,000 side profit (profit before the zzp deductions).
+- €1,000 in: €558.78 back at €38,880 (€137.30 of it zorgtoeslag), €439.58 at €51,840, exactly €495 at €120,000 (49.50%, no tariefsaanpassing); only the part within the jaarruimte counts.
+- The lijfrente deduction lowers the room in the top bracket for the mortgage's tariefsaanpassing.
 
 Mortgage (see "Mortgage 2026" above):
 
@@ -288,7 +313,7 @@ Income tax:
 
 ## Milestones
 
-Stop after each one for review. Status on 26 September 2026: 1 to 5 and 7 are done, 6 is dropped, 8 is in progress: the mortgage is built, its assumptions wait for Amir's review.
+Stop after each one for review. Status on 26 September 2026: 1 to 5 and 7 are done, 6 is dropped, 8 is in progress: the mortgage and the lijfrente what-if are built, their assumptions wait for Amir's review.
 
 The milestones were renumbered on 26 September 2026. Before that, the side income page was milestone 5, the "next €100" pages were 3 and 4, and 6 was the dropped payslip check.
 
@@ -304,7 +329,7 @@ The milestones were renumbered on 26 September 2026. Before that, the side incom
    Wide screens: inputs on the left, answers on the right. Each section gets a plain #anchor, so a link can point to one question. Saved inputs from the old pages carry over. The engine does not change. *Done:* the code is in `src/app/`. A person alone gets no heading or name field; names appear with a partner. The per-person card no longer repeats the set-aside note, the side income section has it. When both partners have side income there is nothing to compare, so the section shows each one's own and no chart. The old side income page's inputs carry over only when there are no household inputs, with the side income on the first person.
 6. ~~"Next €100" pages for one person and for a couple.~~ Dropped on 26 September 2026: with sliders and one page, dragging a salary already shows total netto growing and "of the next €100" changing for each partner. What is left, a chart across all incomes, moves to milestone 7.
 7. **Toeslagen.** Zorgtoeslag, huurtoeslag, kindgebonden budget and kinderopvangtoeslag on the combined household income. Every extra input is optional, with a sensible default: for example rent, children and their ages, childcare hours and costs, and savings for the asset test (vermogenstoets). Add "lost toeslag" as a third colour in the "next €100" bar, and show the armoedeval honestly where it occurs. Research the exact 2026 rules first, write them into this file like the tax rules above, and confirm them with Amir. Amir asked for all four at once (26 September 2026). *Done:* the rules are in "Toeslagen 2026" above, the engine in `engine/toeslagen.ts`, the inputs (children with age and optional childcare, rent, savings) in `ui/home-form.ts`, the section in `app/toeslagen.ts`. The saved inputs moved to version 3; version 2 carries over with an empty home. Still open: the huurtoeslag figures marked "not verified". The "Is working more worth it?" section (`app/worth-it.ts`) is a stacked area of kept, income tax and lost toeslag across all salaries, with a "you are here" dot; for a couple a toggle picks whose salary goes up, because the other partner's salary stays where it is. See "How the page uses toeslagen" for how it treats the drops at once.
-8. **More optional parameters.** One at a time, add the items from "Not included" below that change the answer for many people, each as an optional input that is zero or off by default: mortgage (hypotheekrenteaftrek and eigenwoningforfait), a lijfrente what-if (a deposit lowers taxable income and the toetsingsinkomen for toeslagen), savings and investments in box 3, people at AOW age, special bonus rates, and for zzp'ers business losses, KOR and investment deductions. Explain each rule first, as always, and agree the order with Amir. *Mortgage done* (26 September 2026, built while Amir was away): inputs WOZ value, loan and rate in the home block, `engine/eigen-woning.ts`, the section in `app/mortgage.ts`, rules in "Mortgage 2026" above. Open: the assumptions in `docs/mortgage-2026.md`, and checking the figures on belastingdienst.nl. Next item: to agree with Amir.
+8. **More optional parameters.** One at a time, add the items from "Not included" below that change the answer for many people, each as an optional input that is zero or off by default: mortgage (hypotheekrenteaftrek and eigenwoningforfait), a lijfrente what-if (a deposit lowers taxable income and the toetsingsinkomen for toeslagen), savings and investments in box 3, people at AOW age, special bonus rates, and for zzp'ers business losses, KOR and investment deductions. Explain each rule first, as always, and agree the order with Amir. *Mortgage done* (26 September 2026, built while Amir was away): inputs WOZ value, loan and rate in the home block, `engine/eigen-woning.ts`, the section in `app/mortgage.ts`, rules in "Mortgage 2026" above. Open: the assumptions in `docs/mortgage-2026.md`, and checking the figures on belastingdienst.nl. *Lijfrente done* (26 September 2026, Amir's choice: "options that could reduce tax, like lijfrente", in a what-if section): the section "What could lower your tax?" in `app/lower-tax.ts`, `engine/lijfrente.ts`, rules in "Lijfrente 2026" above, assumptions in `docs/lijfrente-2026.md`. The section is built to take more options, each with its own answer, inputs and "Show me why". Next option: to agree with Amir.
 
 Dropped: ~~payslip check for two jobs~~. Two employers are rare in practice, and the set-aside question for zzp side income is answered in the side income section. The engine keeps `withholding.ts`.
 
@@ -312,6 +337,6 @@ Later ideas, not now: Dutch and Persian translations, and an explanation layer w
 
 ## Not included (show this on the page until added)
 
-Deductions besides the mortgage interest, box 3 savings, lijfrente, special bonus rates, business losses, KOR and investment deductions, people at AOW age (until milestone 8). For the mortgage: erfpacht, the costs of taking out a mortgage, part of a year, and loans that do not count as eigenwoningschuld (shown in the "Mortgage" note). For toeslagen: other people living in the home besides the partner and children, and special situations. On salary the employer pays the Zvw health contribution; on side income the zzp'er pays it, and that is included.
+Deductions besides the mortgage interest and a lijfrente, box 3 savings, reserveringsruimte for a lijfrente, special bonus rates, business losses, KOR and investment deductions, people at AOW age (until milestone 8). For the mortgage: erfpacht, the costs of taking out a mortgage, part of a year, and loans that do not count as eigenwoningschuld (shown in the "Mortgage" note). For toeslagen: other people living in the home besides the partner and children, and special situations. On salary the employer pays the Zvw health contribution; on side income the zzp'er pays it, and that is included.
 
 The footer text is `common.notIncluded` in `src/i18n/en.ts`. Keep it and this list the same.

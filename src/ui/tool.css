@@ -559,3 +559,21 @@ fieldset.whose {
   background: var(--toeslag);
   transform: translateY(1px);
 }
+
+/* ---------- what could lower your tax ---------- */
+
+/* One option per block, each with its own answer, controls and "Show me why". */
+.option {
+  margin-block-start: 14px;
+  padding-block-start: 14px;
+  border-block-start: 1px solid var(--line);
+}
+
+.option h3 {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+}
+
+#lijfrente-controls {
+  margin-block-start: 12px;
+}

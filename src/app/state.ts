@@ -8,13 +8,17 @@ export interface PersonInput {
   name: string;
   job: JobInput;
   side: SideInput | null;
+  /** Factor A from the pension overview (UPO), for the lijfrente jaarruimte. Missing or empty: none. */
+  factorA?: string;
 }
 
 export interface HouseholdState {
   version: 3;
   people: PersonInput[];
-  /** Children, rent and savings: what the toeslagen need besides income. */
+  /** Children, rent or a mortgage, and savings: what the toeslagen and the own home need besides income. */
   home: HomeInput;
+  /** The what-if lijfrente deposit per year, as typed. Missing: the section's example amount. */
+  lijfrente?: string;
 }
 
 export const MAX_PEOPLE = 2;
@@ -65,9 +69,10 @@ export function parseSavedState(raw: string | null): HouseholdState | null {
   if (!arePeople(state.people)) return null;
   // Saved before the toeslagen: keep the people, start with an empty home.
   if (state.version === 2) return { version: 3, people: state.people, home: newHome() };
-  // Saved before the mortgage: the same version, without the mortgage field.
+  // Saved before the mortgage or the lijfrente: the same version, without those fields.
   if (state.version === 3 && isHomeInput(state.home)) {
-    return { version: 3, people: state.people, home: { ...state.home, mortgage: state.home.mortgage ?? null } };
+    const lijfrente = typeof state.lijfrente === "string" ? { lijfrente: state.lijfrente } : {};
+    return { version: 3, people: state.people, home: { ...state.home, mortgage: state.home.mortgage ?? null }, ...lijfrente };
   }
   return null;
 }
@@ -77,7 +82,12 @@ function arePeople(value: unknown): value is PersonInput[] {
   return value.every((person: unknown) => {
     if (typeof person !== "object" || person === null) return false;
     const p = person as Record<string, unknown>;
-    return typeof p.name === "string" && isJobInput(p.job) && (p.side === null || isSideInput(p.side));
+    return (
+      typeof p.name === "string" &&
+      isJobInput(p.job) &&
+      (p.side === null || isSideInput(p.side)) &&
+      (p.factorA === undefined || typeof p.factorA === "string")
+    );
   });
 }
 

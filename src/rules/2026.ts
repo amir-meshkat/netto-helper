@@ -55,6 +55,17 @@ export const rules2026: TaxRules = {
     hillenRate: 0.71867,
   },
 
+  // Lijfrente 2026, from search results quoting belastingdienst.nl and pension providers: see docs/lijfrente-2026.md.
+  // The jaarruimte for 2026 is worked out on the income of 2025.
+  lijfrente: {
+    rate: 0.3,
+    franchise: 19_172,
+    maxIncome: 137_800,
+    factorAMultiplier: 6.27,
+    maxJaarruimte: 35_589,
+    maxReserveringsruimte: 42_753,
+  },
+
   zvw: {
     rate: 0.0485,
     maxIncome: 79_409,
