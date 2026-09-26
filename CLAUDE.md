@@ -84,6 +84,7 @@ src/
   ui/                shared: formatting, forgiving number input, sliders, job and side income forms, bars, 100 grid, line chart
 index.html           the page
 prototype/           bruto-netto-2026.html, the first single-file version. Reference only, not part of the build.
+docs/                research notes, such as toeslagen-2026.md (draft, not verified)
 ```
 
 Tools are started with `node node_modules/...` in package.json, because group policy on Amir's laptop blocks the `.cmd` shims in node_modules/.bin. Use `npm test` and `npm run dev`, not `npx`.
@@ -175,7 +176,7 @@ Compute these from the rules, do not hard code them. The table is for testing.
 
 ## Milestones
 
-Stop after each one for review. Status on 26 September 2026: 1 to 5 are done, 6 is dropped, 7 is next.
+Stop after each one for review. Status on 26 September 2026: 1 to 5 are done, 6 is dropped, 7 is in research: see `docs/toeslagen-2026.md`.
 
 The milestones were renumbered on 26 September 2026. Before that, the side income page was milestone 5, the "next €100" pages were 3 and 4, and 6 was the dropped payslip check.
 
@@ -190,7 +191,7 @@ The milestones were renumbered on 26 September 2026. Before that, the side incom
 
    Wide screens: inputs on the left, answers on the right. Each section gets a plain #anchor, so a link can point to one question. Saved inputs from the old pages carry over. The engine does not change. *Done:* the code is in `src/app/`. A person alone gets no heading or name field; names appear with a partner. The per-person card no longer repeats the set-aside note, the side income section has it. When both partners have side income there is nothing to compare, so the section shows each one's own and no chart. The old side income page's inputs carry over only when there are no household inputs, with the side income on the first person.
 6. ~~"Next €100" pages for one person and for a couple.~~ Dropped on 26 September 2026: with sliders and one page, dragging a salary already shows total netto growing and "of the next €100" changing for each partner. What is left, a chart across all incomes, moves to milestone 7.
-7. **Toeslagen.** Zorgtoeslag, huurtoeslag, kindgebonden budget and kinderopvangtoeslag on the combined household income. Every extra input is optional, with a sensible default: for example rent, children and their ages, childcare hours and costs, and savings for the asset test (vermogenstoets). Add "lost toeslag" as a third colour in the "next €100" bar, and show the armoedeval honestly where it occurs. Research the exact 2026 rules first, write them into this file like the tax rules above, and confirm them with Amir. Build one toeslag at a time, starting with zorgtoeslag because its hard income limit causes the armoedeval. Then add the "Is working more worth it?" section: a chart of "of the next €100" across all incomes, with the tax zones and lost toeslag in colour and a "you are here" dot for each partner.
+7. **Toeslagen.** Zorgtoeslag, huurtoeslag, kindgebonden budget and kinderopvangtoeslag on the combined household income. Every extra input is optional, with a sensible default: for example rent, children and their ages, childcare hours and costs, and savings for the asset test (vermogenstoets). Add "lost toeslag" as a third colour in the "next €100" bar, and show the armoedeval honestly where it occurs. Research the exact 2026 rules first, write them into this file like the tax rules above, and confirm them with Amir. Build one toeslag at a time, starting with zorgtoeslag because its hard income limit causes the armoedeval. Research so far: `docs/toeslagen-2026.md` (26 September 2026), a draft from web search summaries because the cloud environment could not reach belastingdienst.nl, rijksoverheid.nl or wetten.overheid.nl. Its numbers are not verified: read each one on the official page before moving it into this file or the code. Then add the "Is working more worth it?" section: a chart of "of the next €100" across all incomes, with the tax zones and lost toeslag in colour and a "you are here" dot for each partner.
 8. **More optional parameters.** One at a time, add the items from "Not included" below that change the answer for many people, each as an optional input that is zero or off by default: mortgage (hypotheekrenteaftrek and eigenwoningforfait), a lijfrente what-if (a deposit lowers taxable income and the toetsingsinkomen for toeslagen), savings and investments in box 3, people at AOW age, special bonus rates, and for zzp'ers business losses, KOR and investment deductions. Explain each rule first, as always, and agree the order with Amir.
 
 Dropped: ~~payslip check for two jobs~~. Two employers are rare in practice, and the set-aside question for zzp side income is answered in the side income section. The engine keeps `withholding.ts`.
