@@ -1,8 +1,10 @@
 /* Layout of the page. Phone: answer, inputs, answers per section. Wide screen: inputs left, answers right. */
 
+/* minmax(0, 1fr): a column never grows wider than the screen to fit a chart drawn for a wider one. */
 .tool-layout {
   display: grid;
   gap: 16px;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-areas: "answer" "inputs" "results";
 }
 
@@ -20,6 +22,7 @@
 
 .stack {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
   align-content: start;
 }
@@ -121,14 +124,16 @@ details.more[open] > summary {
   margin-block-end: 12px;
 }
 
-fieldset.pension {
+fieldset.pension,
+fieldset.whose {
   min-inline-size: 0;
   margin: 0;
   padding: 0;
   border: 0;
 }
 
-fieldset.pension > legend {
+fieldset.pension > legend,
+fieldset.whose > legend {
   padding: 0;
   font-size: 0.86rem;
   color: var(--muted);
@@ -252,67 +257,70 @@ fieldset.pension > legend {
   padding-inline-start: 12px;
 }
 
-/* ---------- line chart ---------- */
+/* ---------- charts: line and area ---------- */
 
-.line-chart {
+.svg-chart {
   position: relative;
   direction: ltr;
   margin-block-start: 4px;
   touch-action: pan-y;
 }
 
-.line-chart:focus-visible {
+.svg-chart:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 4px;
   border-radius: 6px;
 }
 
-.line-chart svg {
+/* Until it is drawn again at a new width, a chart scales down instead of sticking out. */
+.svg-chart svg {
   display: block;
+  max-inline-size: 100%;
+  block-size: auto;
   overflow: visible;
 }
 
-.line-chart .grid line {
+.svg-chart .grid line {
   stroke: var(--line);
   stroke-width: 1;
 }
 
-.line-chart .axis-text {
+.svg-chart .axis-text {
   fill: var(--muted);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
 
-.line-chart .axis-title {
+.svg-chart .axis-title {
   fill: var(--muted);
   font-size: 12px;
   font-weight: 600;
 }
 
-.line-chart .ref-line {
+.svg-chart .ref-line {
   stroke: var(--muted);
   stroke-width: 1;
 }
 
-.line-chart .ref-text {
+.svg-chart .ref-text {
   fill: var(--muted);
   font-size: 12px;
 }
 
-.line-chart .curve {
+.svg-chart .curve {
   fill: none;
   stroke-width: 2;
   stroke-linejoin: round;
   stroke-linecap: round;
 }
 
-.line-chart .marker {
+.svg-chart .marker {
   stroke: var(--surface);
   stroke-width: 2;
 }
 
 /* Ink text with a halo in the surface colour, so labels stay readable where they cross a line. */
-.line-chart .marker-label {
+.svg-chart .marker-label {
   fill: var(--ink);
   font-size: 13px;
   font-weight: 700;
@@ -322,7 +330,24 @@ fieldset.pension > legend {
   stroke-linejoin: round;
 }
 
-.line-chart .crosshair {
+.svg-chart .area {
+  stroke: none;
+}
+
+/* The 2px gap between stacked layers, in the card's own colour. */
+.svg-chart .area-gap {
+  fill: none;
+  stroke: var(--surface);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.svg-chart .area-tick {
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.svg-chart .crosshair {
   stroke: var(--muted);
   stroke-width: 1;
 }
@@ -331,6 +356,7 @@ fieldset.pension > legend {
   position: absolute;
   z-index: 2;
   min-inline-size: 150px;
+  max-inline-size: 250px;
   padding: 8px 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -355,6 +381,12 @@ fieldset.pension > legend {
   inline-size: 12px;
   block-size: 2px;
   border-radius: 1px;
+}
+
+.chart-tooltip .tip-note {
+  margin-block-start: 4px;
+  color: var(--muted);
+  font-size: 0.8rem;
 }
 
 .chart-tooltip strong {
@@ -510,4 +542,20 @@ fieldset.pension > legend {
 
 .next100-bar {
   margin-block: 8px 4px;
+}
+
+/* ---------- is working more worth it ---------- */
+
+fieldset.whose {
+  margin-block-start: 12px;
+}
+
+.legend .tick-key {
+  flex: none;
+  inline-size: 2px;
+  block-size: 10px;
+  margin-inline: 5px;
+  border-radius: 1px;
+  background: var(--toeslag);
+  transform: translateY(1px);
 }

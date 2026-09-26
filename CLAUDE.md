@@ -52,7 +52,7 @@ If Amir prefers C# later, the engine is small enough to port. Keep it free of UI
 - Live site: https://amir-meshkat.github.io/netto-helper/ (GitHub Pages, from 26 September 2026). Every push to `main` goes live: `.github/workflows/deploy.yml` runs the tests and the build (which includes the typecheck) and publishes `dist/`. A failing test stops the deploy. Pages is switched on in the repository settings with Source "GitHub Actions". The site is public: anything pushed to `main` is visible to everyone within minutes.
 - Amir gets the code on his laptop with `git pull`. `.claude/launch.json` starts the dev server there; it holds the Windows path to node.exe, so it only works on his laptop.
 - Preview: https://claude.ai/artifact/LBHZ7e7fuGpw1gD4fpX1yr, shared by link. Optional now that the site is live on GitHub Pages; republish it only when Amir asks. Publish the output of `npm run build`: `dist/index.html` as the page itself, without its `<!doctype>`, `<html>`, `<head>` and `<body>` tags (the host adds its own), and every other file in `dist/` at its own path. From a new session, pass that URL to update the same page.
-- Each section has a plain anchor (`#netto`, `#each-100`, `#people`, `#side-income`), so a link can open the page at one question. Keep anchors to letters, digits and hyphens: the preview host passes only plain anchors like these.
+- Each section has a plain anchor (`#netto`, `#each-100`, `#toeslagen`, `#people`, `#worth-it`, `#side-income`), so a link can open the page at one question. Keep anchors to letters, digits and hyphens: the preview host passes only plain anchors like these.
 
 ## Architecture
 
@@ -68,7 +68,7 @@ src/
     business.ts      zzp side income: entrepreneur deductions, mkb-winstvrijstelling, Zvw, tariefsaanpassing
     person.ts        gross to netto for one person: salary plus optional side income
     household.ts     sum over persons, plus toeslagen on the combined income, minus childcare costs
-    marginal.ts      "of the next €100" (with toeslagen, for the household) and zone detection
+    marginal.ts      "of the next €100" (with toeslagen, for the household), the same at every salary for the chart, and zone detection
     toeslagen.ts     zorgtoeslag, kindgebonden budget, huurtoeslag, kinderopvangtoeslag, and where one drops at once
     side-income.ts   what side income adds and how much to set aside
     withholding.ts   payroll estimate for people with two employers (rare, kept in the engine)
@@ -83,8 +83,9 @@ src/
     side-situation.ts which side income to show and who should earn it (no DOM, tested)
     side-income.ts   section: what side income leaves, how much to set aside, the chart
     toeslagen.ts     section: the toeslagen, per toeslag, and the nearest place where one drops at once
+    worth-it.ts      section: is working more worth it, "of the next €100" at every salary, for one partner at a time
     view.ts          what every section needs to draw itself
-  ui/                shared: formatting, forgiving number input, sliders, job, side income and home forms, bars, 100 grid, line chart
+  ui/                shared: formatting, forgiving number input, sliders, job, side income and home forms, bars, 100 grid, line and area charts (chart-frame.ts: axes, crosshair, tooltip)
 index.html           the page
 prototype/           bruto-netto-2026.html, the first single-file version. Reference only, not part of the build.
 docs/                research notes: toeslagen-2026.md (partly verified), sources/ (official documents, such as the Toeslagenkaart 2026)
@@ -235,6 +236,7 @@ How the page uses toeslagen:
 - The headline counts toeslagen and takes off the childcare costs, because kinderopvangtoeslag only pays back part of a bill: "what you keep" means after childcare.
 - "Of the next €100" is a household question, because toeslagen look at the combined income. It shows income tax, lower toeslagen and what is kept, and says so plainly when it is negative (the armoedeval).
 - The toeslagen section warns about the nearest place ahead where a toeslag drops at once: the zorgtoeslag limit, or a row of the kinderopvangtoeslag table.
+- "Is working more worth it?" shows "of the next €100" at every salary of one partner, with everything else as typed. Its first sentence uses the real next €100, the same number as the person card. The chart leaves the drops at once out of the curve (zorgtoeslag counts as staying at its last €24 above the limit) and marks them as ticks along the top. Kinderopvangtoeslag only goes down in steps, about one every €1,700 of income, which adds up: each step is spread evenly over its row, so the chart shows what the steps cost on average, and the section says so.
 
 ## Test cases (must pass)
 
@@ -245,6 +247,7 @@ Toeslagen (see "Toeslagen 2026" above for the sources):
 - Kinderopvangtoeslag: 96% at €56,412 and 95.5% or 95.6% at €56,413; two children in full time dagopvang lose €216.96 a year at once at €58,185.
 - Huurtoeslag: €3,866.01 a year alone with €800 rent at €30,000 (not verified, see above).
 - Of the next €100, alone: €46.07 kept at €36,000 (income tax €40.20, zorgtoeslag €13.73); €44.32 at €38,880, because most of that €100 falls above the €38,883 bracket boundary.
+- The "worth it" chart: at €38,880 it gives the card's €44.32; at €40,800 only the 13.73% of the €57 up to the zorgtoeslag limit counts as lost toeslag, not the €23.53 that stops at once; two children in full time dagopvang at €57,000: the €216.96 step at €58,185, spread over its row from €56,413 to €58,184, is €12.24 of every €100.
 
 Income tax:
 
@@ -257,7 +260,7 @@ Income tax:
 
 ## Milestones
 
-Stop after each one for review. Status on 26 September 2026: 1 to 5 are done, 6 is dropped, 7 is built except its last part (the "Is working more worth it?" chart).
+Stop after each one for review. Status on 26 September 2026: 1 to 5 and 7 are done, 6 is dropped, 8 is next.
 
 The milestones were renumbered on 26 September 2026. Before that, the side income page was milestone 5, the "next €100" pages were 3 and 4, and 6 was the dropped payslip check.
 
@@ -272,7 +275,7 @@ The milestones were renumbered on 26 September 2026. Before that, the side incom
 
    Wide screens: inputs on the left, answers on the right. Each section gets a plain #anchor, so a link can point to one question. Saved inputs from the old pages carry over. The engine does not change. *Done:* the code is in `src/app/`. A person alone gets no heading or name field; names appear with a partner. The per-person card no longer repeats the set-aside note, the side income section has it. When both partners have side income there is nothing to compare, so the section shows each one's own and no chart. The old side income page's inputs carry over only when there are no household inputs, with the side income on the first person.
 6. ~~"Next €100" pages for one person and for a couple.~~ Dropped on 26 September 2026: with sliders and one page, dragging a salary already shows total netto growing and "of the next €100" changing for each partner. What is left, a chart across all incomes, moves to milestone 7.
-7. **Toeslagen.** Zorgtoeslag, huurtoeslag, kindgebonden budget and kinderopvangtoeslag on the combined household income. Every extra input is optional, with a sensible default: for example rent, children and their ages, childcare hours and costs, and savings for the asset test (vermogenstoets). Add "lost toeslag" as a third colour in the "next €100" bar, and show the armoedeval honestly where it occurs. Research the exact 2026 rules first, write them into this file like the tax rules above, and confirm them with Amir. Amir asked for all four at once (26 September 2026). *Done:* the rules are in "Toeslagen 2026" above, the engine in `engine/toeslagen.ts`, the inputs (children with age and optional childcare, rent, savings) in `ui/home-form.ts`, the section in `app/toeslagen.ts`. The saved inputs moved to version 3; version 2 carries over with an empty home. Still open: the huurtoeslag figures marked "not verified". Next: add the "Is working more worth it?" section: a chart of "of the next €100" across all incomes, with the tax zones and lost toeslag in colour and a "you are here" dot for each partner.
+7. **Toeslagen.** Zorgtoeslag, huurtoeslag, kindgebonden budget and kinderopvangtoeslag on the combined household income. Every extra input is optional, with a sensible default: for example rent, children and their ages, childcare hours and costs, and savings for the asset test (vermogenstoets). Add "lost toeslag" as a third colour in the "next €100" bar, and show the armoedeval honestly where it occurs. Research the exact 2026 rules first, write them into this file like the tax rules above, and confirm them with Amir. Amir asked for all four at once (26 September 2026). *Done:* the rules are in "Toeslagen 2026" above, the engine in `engine/toeslagen.ts`, the inputs (children with age and optional childcare, rent, savings) in `ui/home-form.ts`, the section in `app/toeslagen.ts`. The saved inputs moved to version 3; version 2 carries over with an empty home. Still open: the huurtoeslag figures marked "not verified". The "Is working more worth it?" section (`app/worth-it.ts`) is a stacked area of kept, income tax and lost toeslag across all salaries, with a "you are here" dot; for a couple a toggle picks whose salary goes up, because the other partner's salary stays where it is. See "How the page uses toeslagen" for how it treats the drops at once.
 8. **More optional parameters.** One at a time, add the items from "Not included" below that change the answer for many people, each as an optional input that is zero or off by default: mortgage (hypotheekrenteaftrek and eigenwoningforfait), a lijfrente what-if (a deposit lowers taxable income and the toetsingsinkomen for toeslagen), savings and investments in box 3, people at AOW age, special bonus rates, and for zzp'ers business losses, KOR and investment deductions. Explain each rule first, as always, and agree the order with Amir.
 
 Dropped: ~~payslip check for two jobs~~. Two employers are rare in practice, and the set-aside question for zzp side income is answered in the side income section. The engine keeps `withholding.ts`.

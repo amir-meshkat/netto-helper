@@ -172,6 +172,17 @@ export function toeslagen(h: ToeslagHousehold, rules: TaxRules): ToeslagenResult
   return { zorgtoeslag: z, kindgebondenBudget: k, huurtoeslag: hu, kinderopvang: ko, total: z.amount + k.amount + hu.amount + ko.amount };
 }
 
+/**
+ * The toeslagen without the drops at once, for "of the next €100": zorgtoeslag stays at its last amount
+ * above its income limit, and kinderopvangtoeslag is left out, because it only goes down in steps.
+ * The difference over an income range is what the toeslagen take step by step; the drops are in toeslagCliffs.
+ */
+export function gradualToeslagen(h: ToeslagHousehold, rules: TaxRules): number {
+  const limit = rules.toeslagen.zorgtoeslag.maxIncome[who(h)];
+  const zorg = zorgtoeslag({ ...h, income: Math.min(h.income, limit) }, rules).amount;
+  return zorg + kindgebondenBudget(h, rules).amount + huurtoeslag(h, rules).amount;
+}
+
 export interface ToeslagCliff {
   /** The first toetsingsinkomen where the toeslag is lower at once. */
   at: number;
@@ -181,22 +192,25 @@ export interface ToeslagCliff {
 }
 
 /**
- * The nearest income ahead where a toeslag drops at once instead of step by step: the zorgtoeslag
- * limit, or a row of the kinderopvangtoeslag table. Only drops of at least one euro a year count.
+ * Every income where a toeslag drops at once instead of step by step: the zorgtoeslag limit, and each row
+ * of the kinderopvangtoeslag table. Only drops of at least one euro a year count. In order of income.
  */
-export function nextToeslagCliff(h: ToeslagHousehold, rules: TaxRules, within = 5_000): ToeslagCliff | null {
+export function toeslagCliffs(h: ToeslagHousehold, rules: TaxRules): ToeslagCliff[] {
   const at = (income: number) => ({ ...h, income });
   const drop = (limit: number, toeslag: ToeslagCliff["toeslag"]): ToeslagCliff => {
     const amount = toeslag === "zorgtoeslag" ? (x: number) => zorgtoeslag(at(x), rules).amount : (x: number) => kinderopvangtoeslag(at(x), rules).amount;
     return { at: limit + 1, toeslag, loss: amount(limit) - amount(limit + 1) };
   };
-  const limits = [
+  return [
     drop(rules.toeslagen.zorgtoeslag.maxIncome[who(h)], "zorgtoeslag"),
     ...rules.toeslagen.kinderopvang.table.filter((b) => Number.isFinite(b.upTo)).map((b) => drop(b.upTo, "kinderopvang")),
-  ];
-  const ahead = limits
-    // Still at or below the limit (income can have cents), and the drop is within reach.
-    .filter((c) => c.at - 1 >= h.income && c.at <= h.income + within && c.loss >= 1)
+  ]
+    .filter((c) => c.loss >= 1)
     .sort((a, b) => a.at - b.at);
-  return ahead[0] ?? null;
+}
+
+/** The nearest cliff ahead of the household's income, within `within` euros a year. */
+export function nextToeslagCliff(h: ToeslagHousehold, rules: TaxRules, within = 5_000): ToeslagCliff | null {
+  // Still at or below the limit (income can have cents), and the drop is within reach.
+  return toeslagCliffs(h, rules).find((c) => c.at - 1 >= h.income && c.at <= h.income + within) ?? null;
 }

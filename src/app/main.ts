@@ -18,6 +18,7 @@ import { makeWho } from "../ui/who";
 import { miniAnswer, renderAnswer, renderEach100, renderPeople } from "./household";
 import { initSideIncome, renderSideIncome } from "./side-income";
 import { renderToeslagen } from "./toeslagen";
+import { initWorthIt, renderWorthIt } from "./worth-it";
 import { sideSituation } from "./side-situation";
 import { MAX_PEOPLE, loadState, newPerson, saveState, type PersonInput } from "./state";
 import type { View } from "./view";
@@ -39,6 +40,7 @@ byId("page-title").textContent = t.page.title;
 byId("page-intro").textContent = t.page.intro;
 byId("inputs-title").textContent = t.page.inputsTitle;
 initSideIncome();
+initWorthIt(() => renderResults());
 
 const view: View = {
   rules,
@@ -138,6 +140,7 @@ function renderResults(): void {
     people.map((_, p) => nextSalaryInHousehold(people, home, p, rules)),
     view,
   );
+  renderWorthIt(people, home, total, view);
   const sit = sideSituation(state.people, rules);
   // What the side income costs in toeslagen: the household without any side income, compared to now.
   const lostToeslagen = sit

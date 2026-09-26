@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { getRules } from "../rules";
 import {
+  gradualToeslagen,
   huurtoeslag,
   kindgebondenBudget,
   kinderopvangShares,
   kinderopvangtoeslag,
   nextToeslagCliff,
+  toeslagCliffs,
   toeslagen,
   zorgtoeslag,
   type Child,
@@ -197,5 +199,41 @@ describe("nextToeslagCliff", () => {
 
   it("finds nothing when no toeslag stops or steps down within reach", () => {
     expect(nextToeslagCliff(household(100_000), rules)).toBeNull();
+  });
+});
+
+describe("toeslagCliffs", () => {
+  it("without childcare: only the zorgtoeslag limit, alone or with a toeslagpartner", () => {
+    expect(toeslagCliffs(household(0), rules).map((c) => c.at)).toEqual([40_858]);
+    expect(toeslagCliffs(household(0, { partner: true }), rules).map((c) => c.at)).toEqual([51_143]);
+  });
+
+  it("with full time childcare: every step of the table from 56,413 up, in order, each at least one euro", () => {
+    const care = { kind: "dagopvang" as const, hoursPerMonth: 230, pricePerHour: 11.23 };
+    const cliffs = toeslagCliffs(household(0, { partner: true, children: [child(1, care), child(3, care)] }), rules);
+    const ats = cliffs.map((c) => c.at);
+    expect(ats).toEqual([...ats].sort((a, b) => a - b));
+    expect(cliffs.every((c) => c.loss >= 1)).toBe(true);
+    expect(cliffs.find((c) => c.at === 58_185)?.loss).toBeCloseTo(216.96, 2);
+    expect(ats[0]).toBe(51_143);
+  });
+});
+
+describe("gradualToeslagen", () => {
+  it("is the toeslagen without the drops at once: zorgtoeslag stays at its last amount above the limit", () => {
+    expect(gradualToeslagen(household(40_857), rules)).toBeCloseTo(23.53, 2);
+    expect(gradualToeslagen(household(45_000), rules)).toBeCloseTo(23.53, 2);
+    expect(gradualToeslagen(household(30_000), rules)).toBeCloseTo(zorgtoeslag(household(30_000), rules).amount, 6);
+  });
+
+  it("adds kindgebonden budget and huurtoeslag, and leaves out kinderopvangtoeslag, which only goes down in steps", () => {
+    const care = { kind: "dagopvang" as const, hoursPerMonth: 100, pricePerHour: 11.23 };
+    const h = household(35_000, { rent: 800, children: [child(3, care)] });
+    const t = toeslagen(h, rules);
+    expect(gradualToeslagen(h, rules)).toBeCloseTo(t.zorgtoeslag.amount + t.kindgebondenBudget.amount + t.huurtoeslag.amount, 6);
+  });
+
+  it("gives nothing for zorgtoeslag above the maximum vermogen", () => {
+    expect(gradualToeslagen(household(45_000, { vermogen: 200_000 }), rules)).toBe(0);
   });
 });

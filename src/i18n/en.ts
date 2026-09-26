@@ -263,6 +263,61 @@ export const en = {
       "Toeslagen are paid in advance on the income you expect. Tell Dienst Toeslagen about the side income (in Mijn toeslagen), or you pay it back later.",
   },
 
+  /** The "Is working more worth it?" section: of the next €100, at every salary. */
+  worthIt: {
+    title: "Is working more worth it?",
+    answerYes: (p: Who, two: boolean) =>
+      two
+        ? `Yes: of the next €100 ${p.you ? "you earn" : `${p.inSentence} earns`}, your household keeps {amount}.`
+        : "Yes: of the next €100 you earn, you keep {amount}.",
+    answerNo: (p: Who, two: boolean) =>
+      two
+        ? `Not the next €100 ${p.you ? "you earn" : `${p.inSentence} earns`}: it leaves your household with {amount} less.`
+        : "Not the next €100: it leaves you with {amount} less.",
+    range: (upTo: string, low: string, high: string, two: boolean) =>
+      `For salaries up to ${upTo} per month, ${two ? "your household keeps" : "you keep"} between ${low} and ${high} of every extra €100.`,
+    alwaysMore: "So your total always goes up when you earn more, only faster or slower.",
+    mostlyMore:
+      "Your total goes up with every raise, except one that only just crosses a tick at the top of the chart: there a toeslag drops at once.",
+    lessBetween: (from: string, to: string) =>
+      `Between ${from} and ${to} per month, earning more leaves you with less: the toeslagen go down faster than the salary goes up.`,
+    stepsAverage: (steps: string, kept: string, two: boolean) =>
+      `Kinderopvangtoeslag also goes down, in small steps. Spread evenly they cost ${steps} of every extra €100 here, so on average ${two ? "your household keeps" : "you keep"} ${kept}. The chart shows this average.`,
+    whoseTitle: "Whose salary goes up",
+    chartSub: (other: Who | null, otherSalary: string) =>
+      other
+        ? `Of the next €100 of salary, at every salary. ${other.you ? "Your" : `${other.name}'s`} salary stays at ${otherSalary} per month, and everything else as you typed it.`
+        : "Of the next €100 of salary, at every salary, with everything else as you typed it.",
+    legendStep: "A toeslag drops at once",
+    chartX: "Salary, gross per month",
+    chartY: "Of the next €100",
+    marker: (p: Who, amount: string) => `${p.name}: ${amount}`,
+    description: (p: Who, amount: string) =>
+      `Stacked area chart of what is kept, what goes to income tax and what is lost in toeslagen, of the next €100 of salary, for salaries from zero upward. ${p.name}: ${amount} kept now.`,
+    tooltipHead: (salary: string) => `Salary ${salary} per month`,
+    tooltipTotal: (amount: string, two: boolean) => `${two ? "Household total" : "Your total"}: ${amount} per month`,
+    tooltipSteps: (amount: string) => `Of the lower toeslagen, ${amount} is the kinderopvangtoeslag steps, on average`,
+    tooltipNext: (at: string, name: string, loss: string) => `Next drop: at ${at}, ${name} −${loss} a year`,
+    whyIntro: (p: Who, other: Who | null) =>
+      `At every salary, what happens to the next €100 of ${p.you ? "your" : `${p.inSentence}'s`} salary, with everything else as you typed it: holiday pay, pension, side income${
+        other ? `, ${other.you ? "your" : `${other.inSentence}'s`} salary` : ""
+      }, children and rent.`,
+    whyTax:
+      "Income tax goes up in zones: the brackets, and the tax credits that grow and then shrink as income rises. That is why the red band steps up and down.",
+    whyToeslagen: (list: string) => `Toeslagen go down gradually as the household income rises: ${list}.`,
+    whyToeslag: (name: string, rate: string) => `${name} by ${rate} of it`,
+    whyCliffs: "Where a toeslag drops at once:",
+    whyZorgCliff: (at: string, loss: string) => `At ${at} per month, zorgtoeslag stops: the last ${loss} a year goes at once.`,
+    whySteps: (count: number, from: string, to: string, low: string, high: string) =>
+      `From ${from} to ${to} per month, kinderopvangtoeslag steps down ${count} times, by ${low} to ${high} a year each.`,
+    tableToggle: "Show the numbers as a table",
+    tableSalary: "Salary per month",
+    tableKept: "Kept",
+    tableTax: "Income tax and Zvw",
+    tableToeslagen: "Lower toeslagen",
+    tableTotal: "Total per month",
+  },
+
   /** The inputs for toeslagen: children and childcare, rent, savings. All optional. */
   homeForm: {
     title: "Children, rent and savings",

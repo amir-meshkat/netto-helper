@@ -1,9 +1,8 @@
+import { frame, hideCrosshair, interactive, nearest, showTooltip, type Axes, type Frame } from "./chart-frame";
 import { escapeHtml } from "./dom";
-import { niceTicks } from "./ticks";
 
 // A small hand-written SVG line chart: 2px lines, hairline grid, markers with a surface ring,
-// direct labels, and a crosshair tooltip on hover and keyboard. Drawn at the container's real
-// width (so text stays readable on phones) and redrawn when that width changes.
+// direct labels, and a crosshair tooltip on hover and keyboard.
 
 export interface ChartSeries {
   label: string;
@@ -20,36 +19,20 @@ export interface ChartMarker {
   color: string;
 }
 
-export interface LineChartSpec {
+export interface LineChartSpec extends Axes {
   series: ChartSeries[];
   markers: ChartMarker[];
   reference?: { y: number; label: string };
-  xTitle: string;
-  yTitle: string;
-  xMax: number;
-  yMax: number;
-  formatX: (x: number) => string;
-  formatY: (y: number) => string;
   /** Screen reader summary. A table view on the page carries the full data. */
   description: string;
   tooltipHead: (x: number) => string;
   tooltipValue: string;
 }
 
-interface Geometry {
-  left: number;
-  top: number;
-  plotWidth: number;
-  plotHeight: number;
-  width: number;
-  xMax: number;
-  yMax: number;
-}
-
 interface ChartState {
+  width: number;
   spec: LineChartSpec;
-  geometry?: Geometry;
-  index: number | null;
+  frame?: Frame;
 }
 
 const states = new WeakMap<HTMLElement, ChartState>();
@@ -59,67 +42,23 @@ export function renderLineChart(container: HTMLElement, spec: LineChartSpec): vo
   if (existing) {
     existing.spec = spec;
   } else {
-    states.set(container, { spec, index: null });
-    setUp(container);
+    const state: ChartState = { spec, width: 0 };
+    states.set(container, state);
+    const xs = () => state.spec.series[0]?.points.map((p) => p.x) ?? [];
+    state.width = interactive(container, {
+      count: () => xs().length,
+      indexAt: (x) => nearest(xs(), x),
+      start: () => nearest(xs(), state.spec.markers[0]?.x ?? 0),
+      frame: () => state.frame,
+      show: (index) => showAt(container, index),
+      hide: () => hideCrosshair(container),
+      redraw: (width) => {
+        state.width = width;
+        draw(container);
+      },
+    });
   }
   draw(container);
-}
-
-function setUp(container: HTMLElement): void {
-  container.classList.add("line-chart");
-  container.tabIndex = 0;
-  container.setAttribute("role", "group");
-
-  let lastWidth = 0;
-  new ResizeObserver(() => {
-    if (container.clientWidth !== lastWidth) {
-      lastWidth = container.clientWidth;
-      draw(container);
-    }
-  }).observe(container);
-
-  container.addEventListener("pointermove", (event) => {
-    const state = states.get(container);
-    const g = state?.geometry;
-    if (!state || !g) return;
-    const box = container.getBoundingClientRect();
-    const x = ((event.clientX - box.left - g.left) / g.plotWidth) * g.xMax;
-    showAt(container, nearestIndex(state.spec, x));
-  });
-  container.addEventListener("pointerleave", () => hide(container));
-  container.addEventListener("blur", () => hide(container));
-  container.addEventListener("focus", () => {
-    const state = states.get(container);
-    const first = state?.spec.markers[0];
-    if (state && first) showAt(container, nearestIndex(state.spec, first.x));
-  });
-  container.addEventListener("keydown", (event) => {
-    const state = states.get(container);
-    const count = state?.spec.series[0]?.points.length ?? 0;
-    if (!state || count === 0) return;
-    const step = Math.max(1, Math.round(count / 40));
-    const current = state.index ?? 0;
-    const moves: Record<string, number> = {
-      ArrowRight: current + step,
-      ArrowLeft: current - step,
-      Home: 0,
-      End: count - 1,
-    };
-    if (event.key === "Escape") return hide(container);
-    const next = moves[event.key];
-    if (next === undefined) return;
-    event.preventDefault();
-    showAt(container, Math.min(count - 1, Math.max(0, next)));
-  });
-}
-
-function nearestIndex(spec: LineChartSpec, x: number): number {
-  const points = spec.series[0]?.points ?? [];
-  let best = 0;
-  points.forEach((p, i) => {
-    if (Math.abs(p.x - x) < Math.abs((points[best]?.x ?? 0) - x)) best = i;
-  });
-  return best;
 }
 
 function draw(container: HTMLElement): void {
@@ -127,33 +66,9 @@ function draw(container: HTMLElement): void {
   if (!state) return;
   const { spec } = state;
   container.setAttribute("aria-label", spec.description);
-
-  const width = Math.max(280, container.clientWidth);
-  const height = Math.round(Math.min(340, Math.max(230, width * 0.56)));
-  const top = 30;
-  const bottom = 44;
-  const left = 54;
-  const right = 18;
-  const plotWidth = width - left - right;
-  const plotHeight = height - top - bottom;
-  const xTicks = niceTicks(spec.xMax, width < 480 ? 4 : 6);
-  const yTicks = niceTicks(spec.yMax, 4);
-  const xMax = xTicks.at(-1) ?? 1;
-  const yMax = yTicks.at(-1) ?? 1;
-  const sx = (x: number) => left + (Math.min(x, xMax) / xMax) * plotWidth;
-  const sy = (y: number) => top + plotHeight - (Math.max(0, y) / yMax) * plotHeight;
-  state.geometry = { left, top, plotWidth, plotHeight, width, xMax, yMax };
-  state.index = null;
-
-  const grid = yTicks
-    .map((y) => `<line x1="${left}" x2="${left + plotWidth}" y1="${sy(y)}" y2="${sy(y)}"/>`)
-    .join("");
-  const yLabels = yTicks
-    .map((y) => `<text class="axis-text" x="${left - 8}" y="${sy(y) + 4}" text-anchor="end">${escapeHtml(spec.formatY(y))}</text>`)
-    .join("");
-  const xLabels = xTicks
-    .map((x) => `<text class="axis-text" x="${sx(x)}" y="${top + plotHeight + 18}" text-anchor="middle">${escapeHtml(spec.formatX(x))}</text>`)
-    .join("");
+  const f = frame(state.width, spec);
+  state.frame = f;
+  const { left, top, plotWidth, plotHeight, sx, sy } = f;
 
   const reference = spec.reference
     ? `<line class="ref-line" x1="${left}" x2="${left + plotWidth}" y1="${sy(spec.reference.y)}" y2="${sy(spec.reference.y)}"/>
@@ -183,12 +98,8 @@ function draw(container: HTMLElement): void {
     .join("");
 
   container.innerHTML = `
-    <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" aria-hidden="true" focusable="false">
-      <text class="axis-title" x="0" y="14">${escapeHtml(spec.yTitle)}</text>
-      <g class="grid">${grid}</g>
-      ${yLabels}
-      ${xLabels}
-      <text class="axis-title" x="${left + plotWidth}" y="${height - 4}" text-anchor="end">${escapeHtml(spec.xTitle)}</text>
+    <svg width="${f.width}" height="${f.height}" viewBox="0 0 ${f.width} ${f.height}" aria-hidden="true" focusable="false">
+      ${f.svg}
       ${reference}
       ${curves}
       <g class="crosshair-layer" visibility="hidden">
@@ -202,12 +113,11 @@ function draw(container: HTMLElement): void {
 
 function showAt(container: HTMLElement, index: number): void {
   const state = states.get(container);
-  const g = state?.geometry;
-  if (!state || !g) return;
-  state.index = index;
+  const f = state?.frame;
+  if (!state || !f) return;
   const { spec } = state;
   const x = spec.series[0]?.points[index]?.x ?? 0;
-  const px = g.left + (Math.min(x, g.xMax) / g.xMax) * g.plotWidth;
+  const px = f.sx(x);
 
   const layer = container.querySelector<SVGGElement>(".crosshair-layer");
   const line = layer?.querySelector("line");
@@ -216,43 +126,14 @@ function showAt(container: HTMLElement, index: number): void {
   line.setAttribute("x1", String(px));
   line.setAttribute("x2", String(px));
   layer.querySelectorAll("circle").forEach((dot, i) => {
-    const y = spec.series[i]?.points[index]?.y ?? 0;
     dot.setAttribute("cx", String(px));
-    dot.setAttribute("cy", String(g.top + g.plotHeight - (Math.max(0, y) / g.yMax) * g.plotHeight));
+    dot.setAttribute("cy", String(f.sy(spec.series[i]?.points[index]?.y ?? 0)));
   });
 
-  // Built with textContent: labels can contain names typed by users.
-  const tip = container.querySelector<HTMLDivElement>(".chart-tooltip");
-  if (!tip) return;
-  tip.replaceChildren();
-  const head = document.createElement("div");
-  head.className = "tip-head";
-  head.textContent = spec.tooltipHead(x);
-  tip.append(head);
-  for (const s of spec.series) {
-    const row = document.createElement("div");
-    row.className = "tip-row";
-    const key = document.createElement("span");
-    key.className = "tip-key";
-    key.style.background = s.color;
-    const value = document.createElement("strong");
-    value.textContent = spec.formatY(s.points[index]?.y ?? 0);
-    const label = document.createElement("span");
-    label.textContent = spec.series.length > 1 ? `${spec.tooltipValue} (${s.label})` : spec.tooltipValue;
-    row.append(key, value, label);
-    tip.append(row);
-  }
-  tip.hidden = false;
-  const tipWidth = tip.offsetWidth;
-  const leftPos = px + 14 + tipWidth > g.width ? px - 14 - tipWidth : px + 14;
-  tip.style.insetInlineStart = `${Math.max(0, leftPos)}px`;
-  tip.style.insetBlockStart = `${g.top}px`;
-}
-
-function hide(container: HTMLElement): void {
-  const state = states.get(container);
-  if (state) state.index = null;
-  container.querySelector(".crosshair-layer")?.setAttribute("visibility", "hidden");
-  const tip = container.querySelector<HTMLDivElement>(".chart-tooltip");
-  if (tip) tip.hidden = true;
+  const rows = spec.series.map((s) => ({
+    color: s.color,
+    value: spec.formatY(s.points[index]?.y ?? 0),
+    label: spec.series.length > 1 ? `${spec.tooltipValue} (${s.label})` : spec.tooltipValue,
+  }));
+  showTooltip(container, f, px, spec.tooltipHead(x), rows);
 }
