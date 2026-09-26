@@ -4,10 +4,11 @@ import { personNetto } from "../../engine/person";
 import { t } from "../../i18n";
 import { getRules } from "../../rules";
 import { byId, escapeHtml, withAmount } from "../../ui/dom";
+import { markInvalid, textField } from "../../ui/fields";
 import { euros } from "../../ui/format";
 import { initPage } from "../../ui/page";
-import { parseNumber } from "../../ui/parse";
-import { newJob, toEngineJob } from "../../ui/job-input";
+import { JOB_SLIDERS, isInvalidInput, newJob, toEngineJob } from "../../ui/job-input";
+import { linkSliders } from "../../ui/slider";
 import { loadState, saveState } from "../household/state";
 
 const rules = getRules(2026);
@@ -22,6 +23,7 @@ const LIVE_TOOLS: Record<string, string> = {
 };
 
 initPage();
+linkSliders();
 
 // The quick answer shares its salary with the household page, so clicking through keeps what you typed.
 const state = loadState();
@@ -32,13 +34,16 @@ byId("hero").innerHTML = `
   <h1 class="page-title">${escapeHtml(l.title)}</h1>
   <p class="page-intro">${escapeHtml(l.intro)}</p>
   <div class="quick">
-    <div class="field">
-      <label class="field-label" for="quick-gross">${escapeHtml(l.quickLabel)}</label>
-      <div class="input-unit input-euro input-big">
-        <input type="text" inputmode="decimal" autocomplete="off" id="quick-gross" value="${escapeHtml(firstJob.monthly)}">
-        <span class="unit" aria-hidden="true">€</span>
-      </div>
-    </div>
+    ${textField({
+      id: "quick-gross",
+      value: firstJob.monthly,
+      label: l.quickLabel,
+      unit: "€",
+      big: true,
+      invalid: isInvalidInput("monthly", firstJob.monthly),
+      data: {},
+      slider: JOB_SLIDERS.monthly,
+    })}
     <div id="quick-answer" aria-live="polite"></div>
   </div>`;
 
@@ -57,9 +62,9 @@ function renderQuick(): void {
 }
 
 byId<HTMLInputElement>("quick-gross").addEventListener("input", (event) => {
-  const value = (event.target as HTMLInputElement).value;
-  firstJob.monthly = value;
-  (event.target as HTMLInputElement).setAttribute("aria-invalid", String(value.trim() !== "" && parseNumber(value) === null));
+  const el = event.target as HTMLInputElement;
+  firstJob.monthly = el.value;
+  markInvalid(el, isInvalidInput("monthly", el.value));
   renderQuick();
   if (firstPerson) saveState(state);
 });

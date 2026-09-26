@@ -271,6 +271,65 @@ input[aria-invalid="true"] {
   font-size: 0.82rem;
 }
 
+/* A slider under a number box. The page sets --fill (0% to 100%) to colour the track up to the thumb.
+   The element is 28px high so it is easy to grab on a phone; the track inside it is 6px. */
+.slider {
+  display: block;
+  inline-size: 100%;
+  block-size: 28px;
+  margin: 4px 0 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.slider::-webkit-slider-runnable-track {
+  block-size: 6px;
+  border-radius: 3px;
+  background: linear-gradient(to right, var(--accent) var(--fill, 0%), var(--empty) var(--fill, 0%));
+}
+
+[dir="rtl"] .slider::-webkit-slider-runnable-track {
+  background: linear-gradient(to left, var(--accent) var(--fill, 0%), var(--empty) var(--fill, 0%));
+}
+
+.slider::-webkit-slider-thumb {
+  box-sizing: border-box;
+  inline-size: 22px;
+  block-size: 22px;
+  margin-block-start: -8px;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.25);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.slider::-moz-range-track {
+  block-size: 6px;
+  border-radius: 3px;
+  background: var(--empty);
+}
+
+.slider::-moz-range-progress {
+  block-size: 6px;
+  border-radius: 3px;
+  background: var(--accent);
+}
+
+.slider::-moz-range-thumb {
+  box-sizing: border-box;
+  inline-size: 22px;
+  block-size: 22px;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.25);
+}
+
 .field.invalid .field-error {
   display: block;
 }

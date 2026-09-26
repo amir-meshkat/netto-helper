@@ -8,7 +8,7 @@ import { sideIncomeValue } from "../../engine/side-income";
 import { t, type Who } from "../../i18n";
 import { getRules } from "../../rules";
 import { legend, stackedBar, waffle } from "../../ui/components";
-import { byId, escapeHtml, rememberOpenDetails, withAmount } from "../../ui/dom";
+import { byId, escapeHtml, oncePerFrame, rememberOpenDetails, withAmount } from "../../ui/dom";
 import { floatingAnswer } from "../../ui/floating-answer";
 import { euros, eurosCents, percent, splitHundred } from "../../ui/format";
 import { handleJobInput, handlePensionModeChange, jobFields } from "../../ui/job-form";
@@ -16,6 +16,7 @@ import { toEngineJob, type JobInput } from "../../ui/job-input";
 import { handleSideInput, sideFields } from "../../ui/side-form";
 import { newSide, toEngineSide, type SideInput } from "../../ui/side-input";
 import { initPage } from "../../ui/page";
+import { linkSliders } from "../../ui/slider";
 import { makeWho } from "../../ui/who";
 import { MAX_PEOPLE, loadState, newPerson, saveState, type PersonInput } from "./state";
 
@@ -281,6 +282,10 @@ function update(): void {
   saveState(state);
 }
 
+/** For typing and dragging: many events, one redraw per frame. */
+const updateSoon = oncePerFrame(update);
+linkSliders();
+
 // ---------- events ----------
 
 inputs.addEventListener("input", (event) => {
@@ -290,9 +295,9 @@ inputs.addEventListener("input", (event) => {
     const p = Number(el.dataset.name);
     personAt(p).name = el.value;
     byId(`person-${p}-name`).textContent = h.personTitle(who(p));
-    update();
+    updateSoon();
   } else if (handleJobInput(event, findJob) || handleSideInput(event, findSide)) {
-    update();
+    updateSoon();
   }
 });
 

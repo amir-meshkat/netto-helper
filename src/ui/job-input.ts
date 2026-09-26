@@ -1,5 +1,6 @@
 import type { Job } from "../engine/person";
 import { parseNumber } from "./parse";
+import type { SliderRange } from "./slider-range";
 
 /** One job as typed. Kept as text, so "3.500" stays exactly as the user wrote it. */
 export interface JobInput {
@@ -23,7 +24,17 @@ export const JOB_TEXT_KEYS: readonly JobTextKey[] = [
   "franchise",
 ];
 
-const PERCENT_KEYS = new Set<JobTextKey>(["holidayPct", "yearEndPct", "pensionPct"]);
+export const PERCENT_KEYS: ReadonlySet<JobTextKey> = new Set<JobTextKey>(["holidayPct", "yearEndPct", "pensionPct"]);
+
+/** Slider range per field: the usual values. The text box still takes any number. */
+export const JOB_SLIDERS: Record<JobTextKey, SliderRange> = {
+  monthly: { min: 0, max: 10_000, step: 50 },
+  holidayPct: { min: 0, max: 20, step: 0.5 },
+  yearEndPct: { min: 0, max: 20, step: 0.5 },
+  pensionMonthly: { min: 0, max: 1_000, step: 5 },
+  pensionPct: { min: 0, max: 20, step: 0.5 },
+  franchise: { min: 0, max: 30_000, step: 100 },
+};
 
 export function newJob(monthly = ""): JobInput {
   return {

@@ -78,7 +78,7 @@ src/
     household/       milestone 2
     side-income/     milestone 3
     next-100/        milestones 5 and 6 (not built yet)
-  ui/                shared: formatting, forgiving number input, job and side income forms, bars, 100 grid, line chart
+  ui/                shared: formatting, forgiving number input, sliders, job and side income forms, bars, 100 grid, line chart
 index.html, household/index.html, side-income/index.html   one HTML entry per page
 prototype/           bruto-netto-2026.html, the first single-file version. Reference only, not part of the build.
 ```
@@ -172,14 +172,14 @@ Compute these from the rules, do not hard code them. The table is for testing.
 
 ## Milestones
 
-Stop after each one for review. Status on 26 September 2026: 1 to 3 are done, 4 is next.
+Stop after each one for review. Status on 26 September 2026: 1 to 4 are done. Open question to Amir: keep 5 and 6 as separate pages, or fold them into the household page.
 
 The milestones were renumbered on 26 September 2026. Before that, the side income page was milestone 5, the "next €100" pages were 3 and 4, and 6 was the dropped payslip check.
 
 1. **Project setup and engine.** Vite + TypeScript + Vitest, rules file for 2026, engine with all test cases above passing. No UI yet. *Done.*
 2. **Household page.** Port the prototype (now `prototype/bruto-netto-2026.html`) to this structure. One or two people, each with a salary and optional zzp side income. Inputs per job: monthly gross, holiday %, year-end %, pension (payslip amount or % and franchise). Output: household netto per month first, then per person breakdown with "Show me why". *Done.*
 3. **Side income page (zzp).** For one person: what is left of the side income and how much to set aside per month. For a couple: which partner should earn it ("€X more per month with B"). Chart of netto kept from the side income against salary, with both partners marked. *Done.*
-4. **Sliders for every number.** Every number a person enters gets a slider next to its text box: salary first, then side income revenue and costs, holiday pay, bonus and pension. Dragging updates every result on the page in real time; typing moves the slider. The slider covers the usual range (for example a salary of €0 to €10,000 per month); a typed value outside it still counts, and the slider then waits at its end. One shared component in `ui/` for the landing, household and side income pages. It must work with touch, mouse and keyboard, in right to left layouts, and stay smooth on a phone (redraw at most once per frame).
+4. **Sliders for every number.** Every number a person enters gets a slider next to its text box: salary first, then side income revenue and costs, holiday pay, bonus and pension. Dragging updates every result on the page in real time; typing moves the slider. The slider covers the usual range (for example a salary of €0 to €10,000 per month); a typed value outside it still counts, and the slider then waits at its end. One shared component in `ui/` for the landing, household and side income pages. It must work with touch, mouse and keyboard, in right to left layouts, and stay smooth on a phone (redraw at most once per frame). *Done:* `ui/slider.ts` writes a dragged value into the text box and fires the box's input event, so pages handle it exactly like typing. The ranges are `JOB_SLIDERS` in `ui/job-input.ts` and `SIDE_SLIDERS` in `ui/side-input.ts`.
 5. **"Next €100", one person.** One slider for gross salary, built on the milestone 4 slider. Top: total netto bar that always grows. Below: "Of the next €100 you keep €X" bar that changes by zone. Optional traffic light band (green, orange, red zones) with a "you are here" marker.
 6. **"Next €100", couple.** Two sliders, one per partner, each with its own zone marker, and the household total.
 7. **Toeslagen.** Zorgtoeslag, huurtoeslag, kindgebonden budget and kinderopvangtoeslag on the combined household income. Every extra input is optional, with a sensible default: for example rent, children and their ages, childcare hours and costs, and savings for the asset test (vermogenstoets). Add "lost toeslag" as a third colour in the "next €100" bar, and show the armoedeval honestly where it occurs. Research the exact 2026 rules first, write them into this file like the tax rules above, and confirm them with Amir. Build one toeslag at a time, starting with zorgtoeslag because its hard income limit causes the armoedeval.

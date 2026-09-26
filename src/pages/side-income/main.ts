@@ -7,13 +7,14 @@ import { sideIncomeCurve, sideIncomeValue, type SideIncomeValue } from "../../en
 import { t, type Who } from "../../i18n";
 import { getRules } from "../../rules";
 import { legend, stackedBar } from "../../ui/components";
-import { byId, escapeHtml, rememberOpenDetails, withAmount } from "../../ui/dom";
+import { byId, escapeHtml, oncePerFrame, rememberOpenDetails, withAmount } from "../../ui/dom";
 import { floatingAnswer } from "../../ui/floating-answer";
 import { euros, eurosCents } from "../../ui/format";
 import { handleJobInput, handlePensionModeChange, jobFields } from "../../ui/job-form";
 import { newJob, toEngineJob, type JobInput } from "../../ui/job-input";
 import { renderLineChart, type ChartSeries } from "../../ui/line-chart";
 import { initPage } from "../../ui/page";
+import { linkSliders } from "../../ui/slider";
 import { handleSideInput, sideFields } from "../../ui/side-form";
 import { toEngineSide } from "../../ui/side-input";
 import { niceTicks } from "../../ui/ticks";
@@ -344,6 +345,10 @@ function update(): void {
   saveState(state);
 }
 
+/** For typing and dragging: many events, one redraw per frame. */
+const updateSoon = oncePerFrame(update);
+linkSliders();
+
 // ---------- events ----------
 
 inputs.addEventListener("input", (event) => {
@@ -355,9 +360,9 @@ inputs.addEventListener("input", (event) => {
     if (!partner) return;
     partner.name = el.value;
     byId(`partner-${i}-name`).textContent = who(i).name;
-    update();
+    updateSoon();
   } else if (handleJobInput(event, findJob) || handleSideInput(event, findSide)) {
-    update();
+    updateSoon();
   }
 });
 

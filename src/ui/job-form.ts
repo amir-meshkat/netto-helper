@@ -2,7 +2,7 @@ import { t } from "../i18n";
 import { escapeHtml } from "./dom";
 import { markInvalid, textField } from "./fields";
 import { euros, percent } from "./format";
-import { isInvalidInput, toEngineJob, type JobInput, type JobTextKey } from "./job-input";
+import { JOB_SLIDERS, isInvalidInput, toEngineJob, type JobInput, type JobTextKey } from "./job-input";
 
 // The inputs of one job: salary, plus holiday pay, bonus and pension behind a toggle.
 // Every element carries data-job (a page-unique id) and data-k (the JobInput key),
@@ -25,6 +25,7 @@ function field(jobId: string, job: JobInput, key: JobTextKey, label: string, uni
     big: options.big,
     invalid: isInvalidInput(key, job[key]),
     data: { job: jobId, k: key },
+    slider: JOB_SLIDERS[key],
   });
 }
 

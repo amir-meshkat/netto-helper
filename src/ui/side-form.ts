@@ -3,7 +3,7 @@ import { getRules } from "../rules";
 import { escapeHtml } from "./dom";
 import { checkbox, markInvalid, textField } from "./fields";
 import { euros } from "./format";
-import { isSideInvalid, type SideInput, type SideSwitchKey, type SideTextKey } from "./side-input";
+import { SIDE_SLIDERS, isSideInvalid, type SideInput, type SideSwitchKey, type SideTextKey } from "./side-input";
 
 // The inputs of side income as a zzp'er: revenue and costs per year, plus three switches
 // behind a toggle. Elements carry data-side (a page-unique id) and data-k (the SideInput key).
@@ -27,6 +27,7 @@ export function sideFields(sideId: string, side: SideInput, open: boolean): stri
       big,
       invalid: isSideInvalid(side[key]),
       data: { side: sideId, k: key },
+      slider: SIDE_SLIDERS[key],
     });
   const toggle = (key: SideSwitchKey, label: string, nl: string, hint: string) =>
     checkbox({ id: `${sideId}-${key}`, checked: side[key], label, nl, hint, data: { side: sideId, k: key } });

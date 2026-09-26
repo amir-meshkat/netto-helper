@@ -41,3 +41,19 @@ export function byId<T extends HTMLElement = HTMLElement>(id: string): T {
   if (!element) throw new Error(`Missing element #${id}`);
   return element as T;
 }
+
+/**
+ * Runs `fn` at most once per animation frame, however often it is asked for.
+ * Dragging a slider fires many input events; the page only needs to redraw once per frame.
+ */
+export function oncePerFrame(fn: () => void): () => void {
+  let pending = false;
+  return () => {
+    if (pending) return;
+    pending = true;
+    requestAnimationFrame(() => {
+      pending = false;
+      fn();
+    });
+  };
+}

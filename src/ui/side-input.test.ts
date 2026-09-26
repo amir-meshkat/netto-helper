@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { isSideInput, isSideInvalid, newSide, toEngineSide } from "./side-input";
+import { parseNumber } from "./parse";
+import { SIDE_SLIDERS, isSideInput, isSideInvalid, newSide, toEngineSide, type SideTextKey } from "./side-input";
+import { sliderPosition, sliderText } from "./slider-range";
 
 describe("toEngineSide", () => {
   it("reads typed text into engine numbers", () => {
@@ -29,5 +31,23 @@ describe("validation", () => {
     expect(isSideInput(newSide("100"))).toBe(true);
     expect(isSideInput({ ...newSide("100"), hours: "yes" })).toBe(false);
     expect(isSideInput(null)).toBe(false);
+  });
+});
+
+describe("SIDE_SLIDERS", () => {
+  const keys: SideTextKey[] = ["revenue", "costs"];
+
+  it("covers the example side income without clamping it", () => {
+    const side = newSide("12000", "2000");
+    for (const key of keys) expect(sliderPosition(side[key], SIDE_SLIDERS[key])).toBe(parseNumber(side[key]));
+  });
+
+  it("writes text that reads back as the same amount, at every slider position", () => {
+    for (const key of keys) {
+      const range = SIDE_SLIDERS[key];
+      for (let value = range.min; value <= range.max; value += range.step) {
+        expect(parseNumber(sliderText(value, range))).toBe(value);
+      }
+    }
   });
 });

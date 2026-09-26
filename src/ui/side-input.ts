@@ -1,5 +1,6 @@
 import type { SideIncome } from "../engine/business";
 import { parseNumber } from "./parse";
+import type { SliderRange } from "./slider-range";
 
 /** Side income as a zzp'er, as typed. Amounts per year, excluding btw. */
 export interface SideInput {
@@ -14,6 +15,12 @@ export interface SideInput {
 
 export type SideTextKey = "revenue" | "costs";
 export type SideSwitchKey = "business" | "hours" | "starter";
+
+/** Slider range per amount, per year: the usual values. The text box still takes any number. */
+export const SIDE_SLIDERS: Record<SideTextKey, SliderRange> = {
+  revenue: { min: 0, max: 100_000, step: 500 },
+  costs: { min: 0, max: 50_000, step: 250 },
+};
 
 export function newSide(revenue = "", costs = "0"): SideInput {
   return { revenue, costs, business: true, hours: false, starter: false };

@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { isInvalidInput, isJobInput, newJob, toEngineJob } from "./job-input";
+import {
+  JOB_SLIDERS,
+  JOB_TEXT_KEYS,
+  PERCENT_KEYS,
+  isInvalidInput,
+  isJobInput,
+  newJob,
+  toEngineJob,
+} from "./job-input";
+import { parseNumber } from "./parse";
+import { sliderPosition, sliderText } from "./slider-range";
 
 describe("toEngineJob", () => {
   it("reads typed text into engine numbers, percentages as fractions", () => {
@@ -37,5 +47,35 @@ describe("isJobInput", () => {
     expect(isJobInput({ ...newJob("1000"), pensionMode: "other" })).toBe(false);
     expect(isJobInput({ monthly: 1000 })).toBe(false);
     expect(isJobInput(null)).toBe(false);
+  });
+});
+
+describe("JOB_SLIDERS", () => {
+  it("has a range for every text field, in whole steps", () => {
+    for (const key of JOB_TEXT_KEYS) {
+      const { min, max, step } = JOB_SLIDERS[key];
+      expect(min).toBeLessThan(max);
+      expect(step).toBeGreaterThan(0);
+      expect(Number.isInteger(Math.round(((max - min) / step) * 1e9) / 1e9)).toBe(true);
+    }
+  });
+
+  it("covers the defaults and the example salary without clamping them", () => {
+    const job = newJob("3000");
+    for (const key of JOB_TEXT_KEYS) {
+      const decimalOnly = PERCENT_KEYS.has(key);
+      expect(sliderPosition(job[key], JOB_SLIDERS[key], { decimalOnly })).toBe(parseNumber(job[key], { decimalOnly }));
+    }
+  });
+
+  it("writes text that reads back as the same number, at every slider position", () => {
+    for (const key of JOB_TEXT_KEYS) {
+      const range = JOB_SLIDERS[key];
+      const decimalOnly = PERCENT_KEYS.has(key);
+      for (let value = range.min; value <= range.max; value += range.step) {
+        const rounded = Number(value.toFixed(6));
+        expect(parseNumber(sliderText(rounded, range), { decimalOnly })).toBe(rounded);
+      }
+    }
   });
 });
