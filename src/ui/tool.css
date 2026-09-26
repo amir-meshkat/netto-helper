@@ -463,3 +463,51 @@ fieldset.pension > legend {
   color: var(--muted);
   font-size: 0.8rem;
 }
+
+/* ---------- toeslagen ---------- */
+
+/* The home block follows the "Add a partner" button, so it draws its own divider. */
+.home-input {
+  margin-block-start: 22px;
+  padding-block-start: 18px;
+  border-block-start: 1px solid var(--line);
+}
+
+.home-input .hint {
+  margin-block: -4px 10px;
+}
+
+.add-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 10px;
+}
+
+.job.child .btn-add,
+.job.child .btn-link {
+  margin-block-start: 8px;
+}
+
+.toeslag-list {
+  display: grid;
+  gap: 12px;
+  margin: 12px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.toeslag-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+  font-size: 0.95rem;
+}
+
+.toeslag-row strong {
+  white-space: nowrap;
+}
+
+.next100-bar {
+  margin-block: 8px 4px;
+}

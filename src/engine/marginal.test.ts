@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getRules } from "../rules";
 import type { SideIncome } from "./business";
-import { keptOfNext, keptOfNextSalary, taxZones, zoneAt } from "./marginal";
+import { keptOfNext, keptOfNextSalary, nextSalaryInHousehold, taxZones, zoneAt } from "./marginal";
 import { NO_PENSION, incomeTax, type Job } from "./person";
 
 const rules = getRules(2026);
@@ -91,5 +91,38 @@ describe("taxZones", () => {
 
   it("never takes 100% or more of the next euro (income tax alone)", () => {
     for (const zone of zones) expect(zone.rate).toBeLessThan(1);
+  });
+});
+
+describe("nextSalaryInHousehold", () => {
+  const noHome = { vermogen: 0, children: [], rent: null, allYoung: false };
+  const job = (yearly: number): Job => ({ monthlyGross: yearly / 12, holidayPayRate: 0, yearEndBonusRate: 0, pension: NO_PENSION });
+
+  it("alone at 36,000: of the next 100, income tax takes 40.20 and zorgtoeslag 13.73, so 46.07 is kept", () => {
+    const next = nextSalaryInHousehold([{ jobs: [job(36_000)] }], noHome, 0, rules);
+    expect(next.taxAndZvw).toBeCloseTo(40.2, 2);
+    expect(next.lostToeslagen).toBeCloseTo(13.73, 2);
+    expect(next.kept).toBeCloseTo(46.07, 2);
+  });
+
+  it("alone at 38,880: the next 100 mostly falls above the 38,883 bracket boundary, so 44.32 is kept", () => {
+    const next = nextSalaryInHousehold([{ jobs: [job(38_880)] }], noHome, 0, rules);
+    expect(next.taxAndZvw).toBeCloseTo(41.95, 2);
+    expect(next.lostToeslagen).toBeCloseTo(13.73, 2);
+    expect(next.kept).toBeCloseTo(44.32, 2);
+  });
+
+  it("shows the armoedeval: across a kinderopvangtoeslag step, 100 more salary leaves the household with less", () => {
+    const care = { kind: "dagopvang" as const, hoursPerMonth: 230, pricePerHour: 11.23 };
+    const home = { ...noHome, children: [{ age: 1, care }, { age: 3, care }] };
+    const next = nextSalaryInHousehold([{ jobs: [job(58_150)] }, { jobs: [] }], home, 0, rules);
+    expect(next.lostToeslagen).toBeGreaterThan(216.96);
+    expect(next.kept).toBeLessThan(0);
+  });
+
+  it("gives the same as keptOfNextSalary when there are no toeslagen", () => {
+    const next = nextSalaryInHousehold([{ jobs: [job(90_000)] }], noHome, 0, rules);
+    expect(next.lostToeslagen).toBe(0);
+    expect(next.kept).toBeCloseTo(keptOfNextSalary([job(90_000)], null, rules), 6);
   });
 });

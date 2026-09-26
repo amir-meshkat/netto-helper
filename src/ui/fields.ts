@@ -1,6 +1,6 @@
 import { t } from "../i18n";
 import { escapeHtml } from "./dom";
-import { sliderHtml } from "./slider";
+import { sliderHtml, type Unit } from "./slider";
 import type { SliderRange } from "./slider-range";
 
 // Form field building blocks shared by the job and side income forms.
@@ -11,7 +11,7 @@ export interface TextFieldOptions {
   label: string;
   /** Dutch term shown next to the label, in italics. */
   nl?: string;
-  unit: "€" | "%";
+  unit: Unit;
   big?: boolean;
   invalid: boolean;
   /** data-* attributes, so a page can find what the field belongs to. */
@@ -32,7 +32,7 @@ export function textField(o: TextFieldOptions): string {
       <div class="${box}">
         <input type="text" inputmode="decimal" autocomplete="off" id="${o.id}" value="${escapeHtml(o.value)}"${data}
           aria-invalid="${o.invalid}"${o.invalid ? ` aria-describedby="${o.id}-error"` : ""}>
-        <span class="unit" aria-hidden="true">${o.unit}</span>
+        ${o.unit ? `<span class="unit" aria-hidden="true">${o.unit}</span>` : ""}
       </div>
       <span class="field-error" id="${o.id}-error">${escapeHtml(t.jobForm.notANumber)}</span>${
         o.slider ? sliderHtml(o.id, o.value, o.slider, o.unit, o.label) : ""

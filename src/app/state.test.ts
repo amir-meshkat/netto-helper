@@ -1,18 +1,22 @@
 import { describe, expect, it } from "vitest";
+import { newChild, newHome } from "../ui/home-input";
 import { newJob } from "../ui/job-input";
 import { newSide } from "../ui/side-input";
 import { defaultState, fromOldSideIncomePage, loadState, parseSavedState } from "./state";
 
 describe("parseSavedState", () => {
-  it("restores a valid saved state, with or without side income", () => {
-    const saved = {
-      version: 2,
-      people: [
-        { name: "", job: newJob("3000"), side: newSide("12000", "2000") },
-        { name: "Sara", job: newJob("2800"), side: null },
-      ],
-    };
+  const people = [
+    { name: "", job: newJob("3000"), side: newSide("12000", "2000") },
+    { name: "Sara", job: newJob("2800"), side: null },
+  ];
+
+  it("restores a valid saved state, with or without side income and toeslagen inputs", () => {
+    const saved = { version: 3, people, home: { ...newHome(), rent: "850", children: [newChild()] } };
     expect(parseSavedState(JSON.stringify(saved))).toEqual(saved);
+  });
+
+  it("upgrades what was saved before the toeslagen (version 2): same people, an empty home", () => {
+    expect(parseSavedState(JSON.stringify({ version: 2, people }))).toEqual({ version: 3, people, home: newHome() });
   });
 
   it("returns null for missing, broken, old or unexpected data", () => {
@@ -21,6 +25,7 @@ describe("parseSavedState", () => {
     expect(parseSavedState(JSON.stringify({ version: 1, people: [{ name: "", jobs: [newJob("3000")] }] }))).toBeNull();
     expect(parseSavedState(JSON.stringify({ version: 2, people: [] }))).toBeNull();
     expect(parseSavedState(JSON.stringify({ version: 2, people: [{ name: "", job: newJob("1"), side: 5 }] }))).toBeNull();
+    expect(parseSavedState(JSON.stringify({ version: 3, people: [{ name: "", job: newJob("1"), side: null }], home: {} }))).toBeNull();
   });
 });
 
@@ -42,11 +47,12 @@ describe("fromOldSideIncomePage", () => {
 
   it("turns the old side income page's partners into people, with the side income on the first", () => {
     expect(fromOldSideIncomePage(JSON.stringify(old))).toEqual({
-      version: 2,
+      version: 3,
       people: [
         { name: "", job: newJob("3800"), side: newSide("12000", "2000") },
         { name: "Sara", job: newJob("2000"), side: null },
       ],
+      home: newHome(),
     });
   });
 

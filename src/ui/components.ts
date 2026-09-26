@@ -1,6 +1,6 @@
 import { escapeHtml } from "./dom";
 
-export type Tone = "netto" | "tax" | "pension";
+export type Tone = "netto" | "tax" | "pension" | "toeslag";
 
 export interface Part {
   tone: Tone;

@@ -1,5 +1,6 @@
 import type { TaxRules } from "../rules";
 import type { SideIncome } from "./business";
+import { householdTotal, type Home, type PersonIncome } from "./household";
 import { NO_PENSION, incomeTax, personNetto, type Job } from "./person";
 
 export interface TaxZone {
@@ -22,6 +23,31 @@ export function keptOfNext(taxableIncome: number, rules: TaxRules, amount = 100)
 export function keptOfNextSalary(jobs: Job[], side: SideIncome | null, rules: TaxRules, amount = 100): number {
   const extra: Job = { monthlyGross: amount / 12, holidayPayRate: 0, yearEndBonusRate: 0, pension: NO_PENSION };
   return personNetto([...jobs, extra], rules, side).netto - personNetto(jobs, rules, side).netto;
+}
+
+export interface NextSalary {
+  /** What the household keeps of it. Can be below zero where a toeslag drops at once (the armoedeval). */
+  kept: number;
+  taxAndZvw: number;
+  lostToeslagen: number;
+}
+
+/**
+ * Of the next `amount` euros of salary for person `p`: what the household keeps, what goes to income tax
+ * and Zvw, and how much less toeslag the household gets. Toeslagen look at the combined income, so this
+ * is a household question even though one person earns it.
+ */
+export function nextSalaryInHousehold(people: PersonIncome[], home: Home, p: number, rules: TaxRules, amount = 100): NextSalary {
+  const extra: Job = { monthlyGross: amount / 12, holidayPayRate: 0, yearEndBonusRate: 0, pension: NO_PENSION };
+  const before = householdTotal(people, home, rules);
+  const after = householdTotal(
+    people.map((person, i) => (i === p ? { ...person, jobs: [...person.jobs, extra] } : person)),
+    home,
+    rules,
+  );
+  const kept = after.total - before.total;
+  const lostToeslagen = before.toeslagen.total - after.toeslagen.total;
+  return { kept, taxAndZvw: amount - kept - lostToeslagen, lostToeslagen };
 }
 
 /**

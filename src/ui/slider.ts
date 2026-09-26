@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { escapeHtml } from "./dom";
 import { euros, percent } from "./format";
 import { sliderFill, sliderPosition, sliderText, type SliderRange } from "./slider-range";
@@ -5,10 +6,12 @@ import { sliderFill, sliderPosition, sliderText, type SliderRange } from "./slid
 // A slider under a number box. Dragging it writes the value into the box and fires the box's
 // input event, so a page handles a dragged value exactly like a typed one. Typing moves the slider.
 
-type Unit = "€" | "%";
+/** Euros, a percentage, or a plain number such as an age or hours. */
+export type Unit = "€" | "%" | "";
 
-/** What a screen reader says for the slider's value: "€3,050" or "8.5%". */
-const valueText = (value: number, unit: Unit) => (unit === "€" ? euros(value) : percent(value / 100));
+/** What a screen reader says for the slider's value: "€3,050", "8.5%" or "12". */
+const valueText = (value: number, unit: Unit) =>
+  unit === "€" ? euros(value) : unit === "%" ? percent(value / 100) : value.toLocaleString(t.meta.numberLocale);
 
 /** The slider for the text box with id `boxId`. Its own id is `${boxId}-slider`. */
 export function sliderHtml(boxId: string, text: string, range: SliderRange, unit: Unit, label: string): string {
@@ -25,7 +28,7 @@ const rangeOf = (slider: HTMLInputElement): SliderRange => ({
   step: Number(slider.step),
 });
 
-const unitOf = (slider: HTMLInputElement): Unit => (slider.dataset.unit === "%" ? "%" : "€");
+const unitOf = (slider: HTMLInputElement): Unit => (slider.dataset.unit === "%" ? "%" : slider.dataset.unit === "€" ? "€" : "");
 
 /** Colours the track up to the thumb, and updates what a screen reader says. */
 function paint(slider: HTMLInputElement, value: number): void {

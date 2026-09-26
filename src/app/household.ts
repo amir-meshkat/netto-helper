@@ -1,30 +1,40 @@
-import type { HouseholdResult } from "../engine/household";
-import { keptOfNextSalary } from "../engine/marginal";
+import type { HouseholdResult, HouseholdTotal } from "../engine/household";
+import type { NextSalary } from "../engine/marginal";
 import type { PersonResult } from "../engine/person";
 import { t } from "../i18n";
 import { legend, stackedBar, waffle } from "../ui/components";
 import { byId, escapeHtml, withAmount } from "../ui/dom";
 import { euros, eurosCents, percent, splitHundred } from "../ui/format";
-import { toEngineJob } from "../ui/job-input";
-import { toEngineSide } from "../ui/side-input";
-import type { PersonInput } from "./state";
 import type { View } from "./view";
 
 // The household sections: the headline answer, where each €100 goes, and a card per person.
+// The headline and "the next €100" include toeslagen; where each €100 goes is about work income only.
 
 const h = t.household;
 
 const hasIncome = (result: HouseholdResult) => result.gross + result.profit > 0;
 
-/** The headline: netto per month for one person, or for the household. */
-export function renderAnswer(result: HouseholdResult, view: View): void {
+/** "Netto per month", or "Per month, with toeslagen" once toeslagen or childcare are part of the amount. */
+function answerLabel(total: HouseholdTotal): string {
+  const two = total.work.people.length > 1;
+  const withToeslagen = total.toeslagen.total > 0 || total.childcareCost > 0;
+  if (withToeslagen) return two ? h.answerLabelHouseholdToeslagen : h.answerLabelOneToeslagen;
+  return two ? h.answerLabelHousehold : h.answerLabelOne;
+}
+
+/** The headline: what one person, or the household, has per month: netto from work plus toeslagen. */
+export function renderAnswer(total: HouseholdTotal, view: View): void {
   const el = byId("answer");
+  const result = total.work;
   if (!hasIncome(result)) {
     el.innerHTML = `<p class="answer-empty">${escapeHtml(h.answerEmpty)}</p>`;
     return;
   }
   const two = result.people.length > 1;
-  const amount = `<strong class="answer-amount">${escapeHtml(euros(result.netto / 12))}</strong>`;
+  // Kinderopvangtoeslag only pays back part of the childcare bill: show the part you pay, not the toeslag.
+  const toeslagen = total.toeslagen.total - total.toeslagen.kinderopvang.amount;
+  const ownChildcare = total.childcareCost - total.toeslagen.kinderopvang.amount;
+  const amount = `<strong class="answer-amount">${escapeHtml(euros(total.total / 12))}</strong>`;
   const sentence = two ? h.answerHousehold : h.answerOne(view.who(0));
   const split = two
     ? `<ul class="split">${result.people
@@ -32,20 +42,25 @@ export function renderAnswer(result: HouseholdResult, view: View): void {
           (r, p) =>
             `<li><span class="dot dot-${p}" aria-hidden="true"></span>${escapeHtml(h.personTitle(view.who(p)))} <strong>${escapeHtml(euros(r.netto / 12))}</strong></li>`,
         )
-        .join("")}</ul>`
+        .join("")}${toeslagen > 0 ? `<li>${escapeHtml(h.splitToeslagen)} <strong>${escapeHtml(euros(toeslagen / 12))}</strong></li>` : ""}${
+        ownChildcare >= 1 ? `<li>${escapeHtml(h.splitChildcare)} <strong>− ${escapeHtml(euros(ownChildcare / 12))}</strong></li>` : ""
+      }</ul>`
     : "";
+  const sub =
+    toeslagen > 0 || total.childcareCost > 0
+      ? h.answerSubToeslagen(euros(total.total), euros(result.netto), euros(toeslagen), ownChildcare >= 1 ? euros(ownChildcare) : null)
+      : h.answerSub(euros(result.netto), result.profit > 0);
   el.innerHTML = `
-    <p class="eyebrow">${escapeHtml(two ? h.answerLabelHousehold : h.answerLabelOne)}</p>
+    <p class="eyebrow">${escapeHtml(answerLabel(total))}</p>
     <p class="answer">${withAmount(sentence, amount)}</p>
-    <p class="answer-sub">${escapeHtml(h.answerSub(euros(result.netto), result.profit > 0))}</p>
+    <p class="answer-sub">${escapeHtml(sub)}</p>
     ${split}`;
 }
 
 /** The small answer pill that follows the reader down the page. Null while there is no answer. */
-export function miniAnswer(result: HouseholdResult): string | null {
-  if (!hasIncome(result)) return null;
-  const label = result.people.length > 1 ? h.answerLabelHousehold : h.answerLabelOne;
-  return `<span>${escapeHtml(label)}</span><strong>${escapeHtml(euros(result.netto / 12))}</strong>`;
+export function miniAnswer(total: HouseholdTotal): string | null {
+  if (!hasIncome(total.work)) return null;
+  return `<span>${escapeHtml(answerLabel(total))}</span><strong>${escapeHtml(euros(total.total / 12))}</strong>`;
 }
 
 /** Where each €100 goes: a grid of 100 squares for netto, tax and pension. */
@@ -147,7 +162,45 @@ function whySteps(hasSide: boolean, two: boolean, view: View): string {
     <ol class="why-steps">${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ol>`;
 }
 
-function personCard(r: PersonResult, person: PersonInput, p: number, two: boolean, view: View): string {
+/**
+ * Of the next €100 of salary: what is kept, in one sentence, a bar in three colours (kept, income tax,
+ * lower toeslagen), and an honest warning where earning more leaves the household with less.
+ */
+function nextHundred(next: NextSalary, w: ReturnType<View["who"]>): string {
+  const lost = next.lostToeslagen >= 0.005;
+  const bar =
+    next.kept >= 0
+      ? stackedBar(
+          [
+            { tone: "netto", value: next.kept },
+            { tone: "tax", value: next.taxAndZvw },
+            { tone: "toeslag", value: next.lostToeslagen },
+          ],
+          `${h.legendKept} ${eurosCents(next.kept)}, ${h.legendTax} ${eurosCents(next.taxAndZvw)}, ${h.legendToeslag} ${eurosCents(next.lostToeslagen)}`,
+        )
+      : "";
+  const keys = lost
+    ? legend(
+        [
+          { tone: "netto", label: h.legendKept },
+          { tone: "tax", label: h.legendTax },
+          { tone: "toeslag", label: h.legendToeslag },
+        ],
+        true,
+      )
+    : "";
+  const note = next.kept < 0 ? "" : lost ? h.nextHundredStill : h.nextHundredNote;
+  const warning = next.kept < 0 ? `<p class="note">${escapeHtml(h.nextHundredLoss)}</p>` : "";
+  const sentence = next.kept < 0 ? h.nextHundredNegative(w, eurosCents(-next.kept)) : h.nextHundred(w, eurosCents(next.kept));
+  return `
+      <p class="next100">${escapeHtml(sentence)}</p>
+      <div class="next100-bar">${bar}</div>
+      ${keys}
+      <p class="small muted">${escapeHtml(h.nextHundredSplit(eurosCents(next.taxAndZvw), lost ? eurosCents(next.lostToeslagen) : null))} ${escapeHtml(note)}</p>
+      ${warning}`;
+}
+
+function personCard(r: PersonResult, next: NextSalary, p: number, two: boolean, view: View): string {
   if (r.gross + (r.business?.profit ?? 0) <= 0) return "";
   const w = view.who(p);
   const key = `why-${p}`;
@@ -164,13 +217,11 @@ function personCard(r: PersonResult, person: PersonInput, p: number, two: boolea
         `${t.common.netto} ${euros(r.netto)}, ${t.common.taxAndZvw} ${euros(r.tax + r.zvw)}, ${t.common.pension} ${euros(r.pension)}`,
       )
     : "";
-  const side = person.side ? toEngineSide(person.side) : null;
-  const kept = keptOfNextSalary([toEngineJob(person.job)], side, view.rules);
   return `
     <article class="card person-card">
       <h2>${title}</h2>
       ${bar}
-      <p class="next100">${escapeHtml(h.nextHundred(w, eurosCents(kept)))}<span class="small muted">${escapeHtml(h.nextHundredNote)}</span></p>
+      ${nextHundred(next, w)}
       <details class="why" data-key="${key}"${view.details.openIf(key)}>
         <summary>${escapeHtml(t.common.showWhy)}</summary>
         ${whyTable(r, view)}
@@ -179,13 +230,13 @@ function personCard(r: PersonResult, person: PersonInput, p: number, two: boolea
     </article>`;
 }
 
-/** A card per person: their netto, "of the next €100", and the full calculation on request. */
-export function renderPeople(result: HouseholdResult, people: PersonInput[], view: View): void {
-  const two = people.length > 1;
+/** A card per person: their netto, "of the next €100" (with toeslagen), and the full calculation on request. */
+export function renderPeople(result: HouseholdResult, next: NextSalary[], view: View): void {
+  const two = result.people.length > 1;
   byId("people").innerHTML = result.people
     .map((r, p) => {
-      const person = people[p];
-      return person ? personCard(r, person, p, two, view) : "";
+      const n = next[p];
+      return n ? personCard(r, n, p, two, view) : "";
     })
     .join("");
 }

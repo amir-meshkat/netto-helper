@@ -1,3 +1,4 @@
+import { isHomeInput, newHome, type HomeInput } from "../ui/home-input";
 import { isJobInput, newJob, type JobInput } from "../ui/job-input";
 import { isSideInput, type SideInput } from "../ui/side-input";
 import { readStored, writeStored } from "../ui/storage";
@@ -10,8 +11,10 @@ export interface PersonInput {
 }
 
 export interface HouseholdState {
-  version: 2;
+  version: 3;
   people: PersonInput[];
+  /** Children, rent and savings: what the toeslagen need besides income. */
+  home: HomeInput;
 }
 
 export const MAX_PEOPLE = 2;
@@ -22,11 +25,11 @@ export function newPerson(monthly = ""): PersonInput {
 
 /** First visit: one person with an example salary, so the answer shows right away. */
 export function defaultState(): HouseholdState {
-  return { version: 2, people: [newPerson("3000")] };
+  return { version: 3, people: [newPerson("3000")], home: newHome() };
 }
 
 // Saved in this browser only (localStorage), never sent anywhere.
-// Version 1 allowed several jobs per person; version 2 has one job plus side income.
+// Version 1 allowed several jobs per person; version 2 has one job plus side income; version 3 adds the home.
 // The key still says "household": the one page took over the household page's inputs as they were.
 const STORAGE_KEY = "netto-helper:household:v2";
 
@@ -51,20 +54,24 @@ export function saveState(state: HouseholdState): void {
 }
 
 export function parseSavedState(raw: string | null): HouseholdState | null {
+  let value: unknown;
   try {
-    const value: unknown = raw ? JSON.parse(raw) : null;
-    return isHouseholdState(value) ? value : null;
+    value = raw ? JSON.parse(raw) : null;
   } catch {
     return null; // broken JSON: start fresh
   }
+  if (typeof value !== "object" || value === null) return null;
+  const state = value as Record<string, unknown>;
+  if (!arePeople(state.people)) return null;
+  // Saved before the toeslagen: keep the people, start with an empty home.
+  if (state.version === 2) return { version: 3, people: state.people, home: newHome() };
+  if (state.version === 3 && isHomeInput(state.home)) return { version: 3, people: state.people, home: state.home };
+  return null;
 }
 
-function isHouseholdState(value: unknown): value is HouseholdState {
-  if (typeof value !== "object" || value === null) return false;
-  const state = value as Record<string, unknown>;
-  if (state.version !== 2 || !Array.isArray(state.people)) return false;
-  if (state.people.length < 1 || state.people.length > MAX_PEOPLE) return false;
-  return state.people.every((person: unknown) => {
+function arePeople(value: unknown): value is PersonInput[] {
+  if (!Array.isArray(value) || value.length < 1 || value.length > MAX_PEOPLE) return false;
+  return value.every((person: unknown) => {
     if (typeof person !== "object" || person === null) return false;
     const p = person as Record<string, unknown>;
     return typeof p.name === "string" && isJobInput(p.job) && (p.side === null || isSideInput(p.side));
@@ -95,5 +102,5 @@ export function fromOldSideIncomePage(raw: string | null): HouseholdState | null
     if (typeof p.name !== "string" || !isJobInput(p.main)) return null;
     people.push({ name: p.name, job: p.main, side: people.length === 0 ? old.side : null });
   }
-  return { version: 2, people };
+  return { version: 3, people, home: newHome() };
 }

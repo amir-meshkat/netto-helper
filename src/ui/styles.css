@@ -12,6 +12,7 @@
   --netto: #d9a21b;
   --tax: #b04a5a;
   --pension: #7a8c99;
+  --toeslag: #2f6fd0;
   --empty: #dfe5e1;
   --note-bg: #fff4db;
   --note-ink: #5c4300;
@@ -34,6 +35,7 @@
     --netto: #b58a1c;
     --tax: #d9607a;
     --pension: #8fa0ac;
+    --toeslag: #5b93e6;
     --empty: #25323a;
     --note-bg: #2e2714;
     --note-ink: #f1d99a;
@@ -55,6 +57,7 @@
   --netto: #b58a1c;
   --tax: #d9607a;
   --pension: #8fa0ac;
+  --toeslag: #5b93e6;
   --empty: #25323a;
   --note-bg: #2e2714;
   --note-ink: #f1d99a;
@@ -492,6 +495,15 @@ details.why[open] > summary {
 
 .tone-pension {
   background: var(--pension);
+}
+
+.tone-toeslag {
+  background: var(--toeslag);
+}
+
+.bar.thin {
+  block-size: 8px;
+  margin-block: 6px 0;
 }
 
 .waffle {

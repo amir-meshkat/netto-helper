@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { getRules } from "../rules";
-import { householdNetto } from "./household";
+import { householdNetto, householdTotal } from "./household";
 import { NO_PENSION, personNetto, type Job } from "./person";
 
 const rules = getRules(2026);
@@ -36,5 +36,37 @@ describe("householdNetto", () => {
     expect(household.profit).toBe(10_000);
     expect(household.zvw).toBeCloseTo(423.41, 2);
     expect(household.gross + household.profit - household.tax - household.zvw).toBeCloseTo(household.netto, 6);
+  });
+});
+
+describe("householdTotal", () => {
+  const noHome = { vermogen: 0, children: [], rent: null, allYoung: false };
+
+  it("adds toeslagen to the work netto: alone at 38,880 gets 294.98 zorgtoeslag", () => {
+    const total = householdTotal([{ jobs: [yearlyJob(38_880)] }], noHome, rules);
+    expect(total.toetsingsinkomen).toBeCloseTo(38_880, 6);
+    expect(total.toeslagen.zorgtoeslag.amount).toBeCloseTo(294.98, 2);
+    expect(total.total).toBeCloseTo(total.work.netto + total.toeslagen.total, 6);
+  });
+
+  it("uses the income of both partners together, and the rules for a toeslagpartner", () => {
+    const total = householdTotal([{ jobs: [yearlyJob(38_880)] }, { jobs: [] }], noHome, rules);
+    expect(total.toetsingsinkomen).toBeCloseTo(38_880, 6);
+    expect(total.toeslagen.zorgtoeslag.amount).toBeCloseTo(1_707.15, 2);
+  });
+
+  it("takes the childcare costs off the total, so kinderopvangtoeslag only makes up for part of them", () => {
+    const care = { kind: "dagopvang" as const, hoursPerMonth: 100, pricePerHour: 11.23 };
+    const total = householdTotal([{ jobs: [yearlyJob(38_880)] }], { ...noHome, children: [{ age: 2, care }] }, rules);
+    expect(total.childcareCost).toBeCloseTo(100 * 11.23 * 12, 6);
+    expect(total.toeslagen.kinderopvang.amount).toBeCloseTo(0.96 * 100 * 11.23 * 12, 6);
+    expect(total.total).toBeCloseTo(total.work.netto + total.toeslagen.total - total.childcareCost, 6);
+  });
+
+  it("counts taxable income: pension premium and the mkb-winstvrijstelling are not part of it", () => {
+    const withPension: Job = { ...yearlyJob(40_000), pension: { kind: "monthly", amount: 100 } };
+    const side = { revenue: 12_000, costs: 2_000, kind: "business" as const, meetsHoursCriterion: false, starter: false };
+    const total = householdTotal([{ jobs: [withPension], side }], noHome, rules);
+    expect(total.toetsingsinkomen).toBeCloseTo(40_000 - 1_200 + 8_730, 6);
   });
 });

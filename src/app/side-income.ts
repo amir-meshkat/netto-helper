@@ -96,7 +96,17 @@ function whyTable(list: Row[], view: View): string {
     <ol class="why-steps">${s.whySteps.map((step) => `<li>${escapeHtml(step)}</li>`).join("")}</ol>`;
 }
 
-function renderReason(sit: SideSituation, view: View): void {
+/**
+ * Side income raises the household income, so toeslagen go down. `lostToeslagen` is that loss per year;
+ * the note says what is really left of the side income, for the situation as it is now.
+ */
+function toeslagenNote(sit: SideSituation, lostToeslagen: number): string {
+  if (lostToeslagen < 12) return "";
+  const keptNow = sit.kind === "each" ? sit.values.reduce((sum, v) => sum + v.kept, 0) : (sit.values[sit.owner]?.kept ?? 0);
+  return `<p class="note">${escapeHtml(s.lowersToeslagen(perMonth(lostToeslagen), perMonth(keptNow - lostToeslagen)))}</p>`;
+}
+
+function renderReason(sit: SideSituation, view: View, lostToeslagen: number): void {
   const list = rows(sit);
   const couple = isCouple(sit);
   const owner = sit.kind === "one" ? sit.owner : -1;
@@ -147,6 +157,7 @@ function renderReason(sit: SideSituation, view: View): void {
   byId("side-reason").innerHTML = `
     <h2>${escapeHtml(couple ? s.answerLabelTwo : s.reasonTitle)}</h2>
     ${answer(sit, view)}
+    ${toeslagenNote(sit, lostToeslagen)}
     <ul class="compare">${bars}</ul>
     <div class="legend-row">${keys}</div>
     ${why ? `<p class="small muted">${escapeHtml(why)}</p>` : ""}
@@ -158,7 +169,7 @@ function renderReason(sit: SideSituation, view: View): void {
 }
 
 /** Nothing is withheld on side income: how much to set aside, for each person or each option. */
-function renderSetAside(sit: SideSituation, view: View): void {
+function renderSetAside(sit: SideSituation, view: View, lostToeslagen: number): void {
   const couple = isCouple(sit);
   const lines = rows(sit)
     .map(({ person, value }) => {
@@ -173,7 +184,8 @@ function renderSetAside(sit: SideSituation, view: View): void {
   byId("side-aside").innerHTML = `
     <h2>${escapeHtml(s.setAsideTitle)}</h2>
     <p class="card-sub">${escapeHtml(s.setAsideIntro)}</p>
-    <ul class="card-notes">${lines}</ul>`;
+    <ul class="card-notes">${lines}</ul>
+    ${lostToeslagen >= 12 ? `<p class="small muted">${escapeHtml(s.toeslagenUpdate)}</p>` : ""}`;
 }
 
 /** What the side income leaves at every salary, with a dot for where each person is now. */
@@ -250,12 +262,15 @@ export function initSideIncome(): void {
   byId("table-toggle").textContent = s.tableToggle;
 }
 
-/** Shows the section when someone has side income with a profit, and hides it otherwise. */
-export function renderSideIncome(sit: SideSituation | null, view: View): void {
+/**
+ * Shows the section when someone has side income with a profit, and hides it otherwise.
+ * `lostToeslagen`: how much less toeslag per year the household gets because of the side income.
+ */
+export function renderSideIncome(sit: SideSituation | null, view: View, lostToeslagen = 0): void {
   byId("side-income").hidden = sit === null;
   if (!sit) return;
-  renderReason(sit, view);
-  renderSetAside(sit, view);
+  renderReason(sit, view, lostToeslagen);
+  renderSetAside(sit, view, lostToeslagen);
   // The chart compares salaries for one side income; with two, there is nothing to put on one line.
   byId("side-chart-card").hidden = sit.kind !== "one";
   if (sit.kind === "one") renderChart(sit, view);

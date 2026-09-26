@@ -1,10 +1,13 @@
 import "../ui/styles.css";
 import "../ui/tool.css";
-import { householdNetto, type PersonIncome } from "../engine/household";
+import { householdTotal, type PersonIncome } from "../engine/household";
+import { nextSalaryInHousehold } from "../engine/marginal";
 import { t } from "../i18n";
 import { getRules } from "../rules";
 import { byId, escapeHtml, oncePerFrame, rememberOpenDetails } from "../ui/dom";
 import { floatingAnswer } from "../ui/floating-answer";
+import { handleHomeChange, handleHomeInput, homeFields } from "../ui/home-form";
+import { newCare, newChild, toEngineHome } from "../ui/home-input";
 import { handleJobInput, handlePensionModeChange, jobFields } from "../ui/job-form";
 import { toEngineJob, type JobInput } from "../ui/job-input";
 import { initPage } from "../ui/page";
@@ -14,6 +17,7 @@ import { linkSliders } from "../ui/slider";
 import { makeWho } from "../ui/who";
 import { miniAnswer, renderAnswer, renderEach100, renderPeople } from "./household";
 import { initSideIncome, renderSideIncome } from "./side-income";
+import { renderToeslagen } from "./toeslagen";
 import { sideSituation } from "./side-situation";
 import { MAX_PEOPLE, loadState, newPerson, saveState, type PersonInput } from "./state";
 import type { View } from "./view";
@@ -28,7 +32,7 @@ initPage({
   notes: [
     [t.common.couplesTitle, t.common.couples],
     [t.sideIncome.notesSideTitle, t.sideIncome.notesSide],
-    [t.sideIncome.toeslagenTitle, t.sideIncome.toeslagen],
+    [t.toeslagen.notesTitle, t.toeslagen.notes],
   ],
 });
 byId("page-title").textContent = t.page.title;
@@ -115,19 +119,32 @@ function renderInputs(focusId?: string): void {
     state.people.length < MAX_PEOPLE
       ? `<button type="button" class="btn-add" data-action="add-person">${escapeHtml(t.common.addPartner)}</button>`
       : "";
-  inputs.innerHTML = state.people.map((_, p) => personInputs(p)).join("") + addPartner;
+  inputs.innerHTML =
+    state.people.map((_, p) => personInputs(p)).join("") + addPartner + homeFields(state.home, rules, view.details.isOpen("more-home"));
   if (focusId) document.getElementById(focusId)?.focus();
 }
 
 // ---------- answers ----------
 
 function renderResults(): void {
-  const result = householdNetto(state.people.map(engineIncome), rules);
-  renderAnswer(result, view);
-  renderEach100(result);
-  renderPeople(result, state.people, view);
-  renderSideIncome(sideSituation(state.people, rules), view);
-  setMini(miniAnswer(result));
+  const people = state.people.map(engineIncome);
+  const home = toEngineHome(state.home);
+  const total = householdTotal(people, home, rules);
+  renderAnswer(total, view);
+  renderEach100(total.work);
+  renderToeslagen(total, home, view);
+  renderPeople(
+    total.work,
+    people.map((_, p) => nextSalaryInHousehold(people, home, p, rules)),
+    view,
+  );
+  const sit = sideSituation(state.people, rules);
+  // What the side income costs in toeslagen: the household without any side income, compared to now.
+  const lostToeslagen = sit
+    ? householdTotal(people.map((person) => ({ ...person, side: null })), home, rules).toeslagen.total - total.toeslagen.total
+    : 0;
+  renderSideIncome(sit, view, lostToeslagen);
+  setMini(miniAnswer(total));
 }
 
 function update(): void {
@@ -149,13 +166,19 @@ inputs.addEventListener("input", (event) => {
     personAt(p).name = el.value;
     byId(`person-${p}-name`).textContent = h.personTitle(view.who(p));
     updateSoon();
-  } else if (handleJobInput(event, findJob) || handleSideInput(event, findSide)) {
+  } else if (handleJobInput(event, findJob) || handleSideInput(event, findSide) || handleHomeInput(event, state.home)) {
     updateSoon();
   }
 });
 
 inputs.addEventListener("change", (event) => {
   const el = event.target;
+  const home = handleHomeChange(event, state.home, rules);
+  if (home === "redraw") renderInputs(el instanceof HTMLElement ? el.id : undefined);
+  if (home) {
+    update();
+    return;
+  }
   if (el instanceof HTMLInputElement && el.type === "checkbox") {
     if (handleSideInput(event, findSide)) update();
     return;
@@ -170,8 +193,32 @@ inputs.addEventListener("click", (event) => {
   const button = (event.target as Element).closest<HTMLButtonElement>("button[data-action]");
   if (!button) return;
   const p = Number(button.dataset.p);
+  const c = Number(button.dataset.c);
+  const child = state.home.children[c];
   let focusId: string | undefined;
   switch (button.dataset.action) {
+    case "add-child":
+      state.home.children.push(newChild());
+      focusId = `child-${state.home.children.length - 1}-age`;
+      break;
+    case "remove-child":
+      state.home.children.splice(c, 1);
+      break;
+    case "add-care":
+      if (child) child.care = newCare(rules);
+      focusId = `child-${c}-hours`;
+      break;
+    case "remove-care":
+      if (child) child.care = null;
+      focusId = `child-${c}-age`;
+      break;
+    case "add-rent":
+      state.home.rent = "";
+      focusId = "home-rent";
+      break;
+    case "remove-rent":
+      state.home.rent = null;
+      break;
     case "add-side":
       personAt(p).side = newSide();
       focusId = `side-${p}-revenue`;

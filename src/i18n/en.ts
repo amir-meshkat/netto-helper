@@ -40,7 +40,7 @@ export const en = {
       "Indicative only, not tax advice. Figures for 2026, for people below AOW age. Rounding can differ a few euros from the Belastingdienst.",
     notIncludedTitle: "Not included yet",
     notIncluded:
-      "Toeslagen, mortgage interest and other deductions, savings in box 3, lijfrente, special bonus rates, business losses, the kleineondernemersregeling (KOR), investment deductions, and people at AOW age. On salary your employer pays the Zvw health contribution; on side income you pay it yourself, and that is included.",
+      "Mortgage interest and other deductions, savings in box 3, lijfrente, special bonus rates, business losses, the kleineondernemersregeling (KOR), investment deductions, and people at AOW age. For toeslagen: other people living with you besides your partner and children, and special situations. On salary your employer pays the Zvw health contribution; on side income you pay it yourself, and that is included.",
     netto: "Netto: yours to keep",
     tax: "Income tax and national insurance",
     taxAndZvw: "Income tax, national insurance and Zvw",
@@ -118,6 +118,8 @@ export const en = {
 
     answerLabelOne: "Netto per month",
     answerLabelHousehold: "Household netto per month",
+    answerLabelOneToeslagen: "Per month, with toeslagen",
+    answerLabelHouseholdToeslagen: "Household per month, with toeslagen",
     answerOne: (p: Who) => `${keeps(p)} {amount} per month.`,
     answerHousehold: `Together you keep {amount} per month.`,
     answerSub: (yearly: string, hasSide: boolean) =>
@@ -132,7 +134,23 @@ export const en = {
     detailsTitleOne: "Your numbers",
     personKeeps: (p: Who) => `${keeps(p)} {amount} per month`,
     nextHundred: (p: Who, amount: string) => `${keeps(p)} ${amount} of the next €100 of salary.`,
-    nextHundredNote: "Earning more never leaves you with less in total, only less per extra euro. Toeslagen are not included yet.",
+    nextHundredNote: "Earning more never leaves you with less in total, only less per extra euro.",
+    nextHundredSplit: (tax: string, toeslagen: string | null) =>
+      toeslagen ? `Income tax takes ${tax}, and your toeslagen go down by ${toeslagen}.` : `Income tax takes ${tax}.`,
+    nextHundredStill: "You still end up with more in total, only a lot less per extra euro.",
+    nextHundredNegative: (p: Who, amount: string) =>
+      `The next €100 of salary leaves ${p.you ? "you" : p.inSentence} with ${amount} less.`,
+    nextHundredLoss:
+      "This is the armoedeval: at this income a toeslag drops at once. The toeslagen section shows which one, and where.",
+    legendKept: "Kept",
+    legendTax: "Income tax and Zvw",
+    legendToeslag: "Lower toeslagen",
+    answerSubToeslagen: (yearly: string, work: string, toeslagen: string, childcare: string | null) =>
+      `That is ${yearly} per year: ${work} from work after income tax and pension, plus ${toeslagen} in toeslagen${
+        childcare ? `, minus ${childcare} you pay for childcare after kinderopvangtoeslag` : ""
+      }.`,
+    splitToeslagen: "Toeslagen",
+    splitChildcare: "Childcare you pay",
 
     why: {
       salary: "Salary per year, with holiday pay and bonus",
@@ -239,9 +257,98 @@ export const en = {
 
     notesSideTitle: "Side income",
     notesSide: "Amounts are without btw.",
-    toeslagenTitle: "Toeslagen",
-    toeslagen:
-      "For toeslagen (huurtoeslag, zorgtoeslag, kindgebonden budget) the combined household income counts, so there it does not matter who earns the side income. Toeslagen are not included on this site yet.",
+    lowersToeslagen: (perMonth: string, left: string) =>
+      `It also raises your household income for toeslagen, which go down by ${perMonth} per month. So ${left} per month of the side income is really left.`,
+    toeslagenUpdate:
+      "Toeslagen are paid in advance on the income you expect. Tell Dienst Toeslagen about the side income (in Mijn toeslagen), or you pay it back later.",
+  },
+
+  /** The inputs for toeslagen: children and childcare, rent, savings. All optional. */
+  homeForm: {
+    title: "Children, rent and savings",
+    hint: "Only needed for toeslagen. Skip what does not apply.",
+    addChild: "Add a child",
+    childTitle: (n: number) => `Child ${n}`,
+    remove: "Remove",
+    age: "Age",
+    addCare: "Add childcare (kinderopvang)",
+    removeCare: "No childcare",
+    careKind: "Type of childcare",
+    careKinds: { dagopvang: "Day care", bso: "After school", gastouder: "Childminder" } as Record<"dagopvang" | "bso" | "gastouder", string>,
+    careKindsNl: {
+      dagopvang: "dagopvang",
+      bso: "buitenschoolse opvang",
+      gastouder: "gastouderopvang",
+    } as Record<"dagopvang" | "bso" | "gastouder", string>,
+    hours: "Hours per month",
+    price: "Price per hour",
+    careHint: (max: string, hours: string) =>
+      `The toeslag counts up to ${max} per hour and ${hours} hours a month. It assumes you both work every month.`,
+    addRent: "Add rent (huurtoeslag)",
+    rentTitle: "Rent",
+    rent: "Bare rent per month",
+    rentNl: "kale huur",
+    rentHint: "Without service costs: from 2026 only the bare rent counts.",
+    allYoung: "Everyone living here is 18, 19 or 20",
+    allYoungHint: (limit: string) => `Then rent counts up to ${limit} per month instead of the usual limit.`,
+    savingsMore: "Savings and investments",
+    savingsNl: "vermogen",
+    savingsNow: (amount: string | null) => (amount ? `Now: ${amount}` : "Now: none entered"),
+    savings: "Savings and investments on 1 January",
+    savingsHint: (huur: string, zorg: string) =>
+      `Of the whole household. For someone alone: above ${huur} no huurtoeslag, above ${zorg} no zorgtoeslag or kindgebonden budget. The limits are higher with a partner.`,
+  },
+
+  /** The toeslagen section. */
+  toeslagen: {
+    title: "Toeslagen",
+    answerOne: "You get about {amount} per month in toeslagen.",
+    answerHousehold: "Together you get about {amount} per month in toeslagen.",
+    answerNone: "At this income you get no toeslagen.",
+    childcare: (toeslag: string, cost: string, own: string) =>
+      `For childcare: kinderopvangtoeslag pays ${toeslag} of the ${cost} it costs per month, so you pay ${own} yourself.`,
+    answerSub: (yearly: string, income: string) =>
+      `That is ${yearly} a year. Toeslagen look at the combined taxable income of the household: ${income} a year.`,
+    names: {
+      zorgtoeslag: "Health care allowance",
+      kindgebondenBudget: "Child budget",
+      huurtoeslag: "Rent allowance",
+      kinderopvang: "Childcare allowance",
+    } as Record<"zorgtoeslag" | "kindgebondenBudget" | "huurtoeslag" | "kinderopvang", string>,
+    namesNl: {
+      zorgtoeslag: "zorgtoeslag",
+      kindgebondenBudget: "kindgebonden budget",
+      huurtoeslag: "huurtoeslag",
+      kinderopvang: "kinderopvangtoeslag",
+    } as Record<"zorgtoeslag" | "kindgebondenBudget" | "huurtoeslag" | "kinderopvang", string>,
+    perMonth: (amount: string) => `${amount} per month`,
+    noneIncome: (limit: string) => `none: income above ${limit}`,
+    noneVermogen: "none: savings above the limit",
+    noneAtIncome: "none at this income",
+    typeRent: "type your rent to see it",
+    next100: (amount: string) => `Of every extra €100 of household income, your toeslagen go down by ${amount}.`,
+    cliff: (name: string, at: string, now: string, loss: string) =>
+      `Watch out: at a household income of ${at} a year (now ${now}), ${name} drops by ${loss} a year at once.`,
+    update:
+      "Toeslagen are paid in advance on the income you expect. When your income changes, update it in Mijn toeslagen, or you pay back later.",
+    why: {
+      zorgtoeslag: (standaard: string, norm: string, amount: string) =>
+        `Standaardpremie ${standaard} minus the normpremie ${norm} (the part you pay yourself, which grows with income) = ${amount} a year.`,
+      zorgtoeslagStopped: (limit: string) => `The income is above ${limit}, so there is no zorgtoeslag at all.`,
+      kindgebonden: (maximum: string, reduction: string, amount: string) =>
+        `The maximum for your children is ${maximum}; minus 7.6% of the income above the threshold (${reduction}) = ${amount} a year.`,
+      huur: (counted: string, basis: string, perMonth: string, reduction: string, amount: string) =>
+        `Rent counted ${counted} per month; you always pay the first ${basis} yourself. Of the rent above that, the toeslag pays 100%, then 65%, then 40%: ${perMonth} per month. Minus a part of the income above the income point (${reduction} a year) = ${amount} a year.`,
+      huurUnverified:
+        "Some 2026 huurtoeslag figures (the basishuur, the income point and its percentage) come from summaries of official pages and still need checking on the pages themselves.",
+      kinderopvangChild: (n: number, share: string, price: string, hours: string, amount: string) =>
+        `Child ${n}: ${share} of ${price} × ${hours} hours × 12 months = ${amount} a year.`,
+      kinderopvangFirst: "The child with the most hours of childcare counts as the first child; the others get the percentage for the next child.",
+      vermogen: "Savings are above the limit, so there is none.",
+    },
+    notesTitle: "Toeslagen",
+    notes:
+      "Worked out for the whole of 2026 on the combined taxable income, so for toeslagen it does not matter which partner earns it. A partner on this page counts as your toeslagpartner. Kinderopvangtoeslag assumes you both work every month. Some huurtoeslag figures still need checking on an official page.",
   },
 };
 

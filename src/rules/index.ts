@@ -2,11 +2,20 @@ import { rules2026 } from "./2026";
 import type { TaxRules } from "./types";
 
 export type {
+  AlonePartner,
   Box1Bracket,
+  ChildcareKind,
   EntrepreneurRules,
   GeneralCreditRules,
+  HuurtoeslagRules,
+  KindgebondenBudgetRules,
+  KinderopvangBand,
+  KinderopvangRules,
   LabourCreditSegment,
+  OneMore,
   TaxRules,
+  ToeslagenRules,
+  ZorgtoeslagRules,
   ZvwRules,
 } from "./types";
 
