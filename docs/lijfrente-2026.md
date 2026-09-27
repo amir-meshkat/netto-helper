@@ -98,6 +98,8 @@ Sources to check:
 
 ## Assumptions to discuss with Amir
 
+Agreed with Amir on 27 September 2026: 8 and 9. The others are still open.
+
 1. **A what-if, not part of "what you keep".** Putting money in a lijfrente is saving, not spending, and the page
    does not know if you will do it, so the headline and the other sections do not change. The new section shows
    what a deposit would give back this year.
@@ -113,6 +115,9 @@ Sources to check:
    pays it and cannot be divided like the mortgage. The page says who gets the most back.
 7. **With a mortgage**, the division of the eigen woning saldo is worked out again with the deposit.
 8. **The honey spot is the most back per euro**, not the most back in total: putting in more always gives more
-   back in total, but each extra euro can give less. On a tie the page takes the largest amount.
+   back in total, but each extra euro can give less. On a tie the page takes the largest amount. *Agreed.*
+   Example at €80,000: €1,574 in gives €49.50 of every €100 back; all €18,248 gives more in total (€8,109) but
+   only €44.44 of every €100, and "put in everything" says nothing new.
 9. **For a couple** the page leads with the partner whose honey spot gives the most back per euro (or a free
-   spot), and gives the other partner's in one line.
+   spot), and gives the other partner's in one line. Both partners can still do it; this only decides whose
+   honey spot comes first. *Agreed.*
