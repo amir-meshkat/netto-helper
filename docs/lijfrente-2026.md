@@ -26,6 +26,32 @@ rate after AOW age. So it moves tax to later rather than removing it.
 - **Reserveringsruimte:** jaarruimte left unused in the ten years before can still be used, up to €42,753 in 2026.
   Not included: it needs ten years of history.
 
+## The honey spot
+
+Amir's idea (27 September 2026): instead of a slider to explore, tell people the amount worth putting in.
+
+- **The honey spot** is the deposit where each euro gives the most back. What comes back per euro only changes
+  where the income crosses a tax zone, a point where a toeslag starts or stops going down, or a toeslag that
+  drops at once. In between it runs in straight lines, so the best deposit is at one of those points or at the
+  whole jaarruimte. The engine checks all of them, plus an even grid of 100 steps for the places where a toeslag
+  runs out. When several amounts give the same back per euro, it takes the largest.
+- **The free spot:** just above a point where a toeslag drops at once (in practice a row of the
+  kinderopvangtoeslag table), a small deposit can bring the household income under it. Then more comes back
+  than goes in: the household keeps more and the deposit is in the pension. The page leads with that, and says
+  up to which amount the household still keeps at least as much.
+- The zorgtoeslag limit is too small for a free spot: the last €24 a year never makes up for the deposit.
+- "Try another amount" keeps the slider for anyone who wants to try their own number.
+
+Examples (tests):
+
+- €38,880 alone: every €100 gives €55.88 back up to €9,144 below the income, more than the jaarruimte, so the
+  honey spot is all of it: €5,912.
+- €80,000: the first €1,574 is in the top bracket and gives €49.50 of every €100 back; above it about €43.80.
+  The honey spot is €1,574.
+- A couple with two children in full time dagopvang, one earning €58,300: €116 in brings the income under the
+  step at €58,185. About €277 comes back, so the household keeps about €161 more. Up to about €448 the
+  household keeps at least as much.
+
 ## Worked examples (also tests)
 
 Alone, salary €3,000 a month with 8% holiday pay (€38,880), no pension at work:
@@ -86,3 +112,7 @@ Sources to check:
 6. **For a couple**, the same amount is worked out for each partner: a lijfrente premium belongs to the person who
    pays it and cannot be divided like the mortgage. The page says who gets the most back.
 7. **With a mortgage**, the division of the eigen woning saldo is worked out again with the deposit.
+8. **The honey spot is the most back per euro**, not the most back in total: putting in more always gives more
+   back in total, but each extra euro can give less. On a tie the page takes the largest amount.
+9. **For a couple** the page leads with the partner whose honey spot gives the most back per euro (or a free
+   spot), and gives the other partner's in one line.

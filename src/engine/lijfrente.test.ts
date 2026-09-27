@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getRules } from "../rules";
 import type { SideIncome } from "./business";
-import { jaarruimte, lijfrenteWhatIf } from "./lijfrente";
+import { honeySpot, jaarruimte, lijfrenteWhatIf } from "./lijfrente";
 import { NO_PENSION, type Job } from "./person";
 
 const rules = getRules(2026);
@@ -65,5 +65,60 @@ describe("lijfrenteWhatIf", () => {
     const b = lijfrenteWhatIf(people, noHome, 1, 1_000, 0, rules);
     expect(a.taxLower).toBeCloseTo(439.58, 2);
     expect(b.taxLower).toBeCloseTo(421.48, 2);
+  });
+});
+
+describe("honeySpot", () => {
+  const yearly = (income: number): Job => ({ monthlyGross: income / 12, holidayPayRate: 0, yearEndBonusRate: 0, pension: NO_PENSION });
+  /** Back per 100 of a deposit, for checking that nothing beats the honey spot. */
+  const perHundred = (people: { jobs: Job[] }[], home: typeof noHome, d: number) =>
+    (lijfrenteWhatIf(people, home, 0, d, 0, rules).back / d) * 100;
+
+  it("at 38,880 every 100 gives 55.88 back all the way, so the honey spot is the whole jaarruimte", () => {
+    const h = honeySpot([{ jobs: [job(3_000)] }], noHome, 0, 0, rules);
+    expect(h.best?.deposit).toBeCloseTo(5_912.4, 2);
+    expect(h.perHundred).toBeCloseTo(55.88, 2);
+    expect(h.afterPerHundred).toBeNull();
+    expect(h.free).toBeNull();
+  });
+
+  it("at 80,000 the top bracket gives 49.50 per 100 for the first 1,574, then about 44", () => {
+    const people = [{ jobs: [yearly(80_000)] }];
+    const h = honeySpot(people, noHome, 0, 0, rules);
+    expect(h.room.amount).toBeCloseTo(18_248.4, 2);
+    expect(h.best?.deposit).toBeCloseTo(1_574, 2);
+    expect(h.perHundred).toBeCloseTo(49.5, 2);
+    expect(h.afterPerHundred).toBeGreaterThan(43);
+    expect(h.afterPerHundred).toBeLessThan(44);
+  });
+
+  it("gives at least as much back per 100 as any deposit in steps of 100", () => {
+    for (const income of [38_880, 44_000, 80_000, 60_000]) {
+      const people = [{ jobs: [yearly(income)] }];
+      const h = honeySpot(people, noHome, 0, 0, rules);
+      for (let d = 100; d <= h.room.amount; d += 100) expect(h.perHundred).toBeGreaterThanOrEqual(perHundred(people, noHome, d) - 0.001);
+    }
+  });
+
+  it("finds the free spot: just under a kinderopvangtoeslag step, the household keeps more than it puts in", () => {
+    const care = { kind: "dagopvang" as const, hoursPerMonth: 230, pricePerHour: 11.23 };
+    const home = { ...noHome, children: [{ age: 1, care }, { age: 3, care }] };
+    const people = [{ jobs: [yearly(58_300)] }, { jobs: [] }];
+    const h = honeySpot(people, home, 0, 0, rules);
+    // 58,300 - 58,185 + 1: one euro under the step that costs 216.96 a year.
+    expect(h.free?.best.deposit).toBeCloseTo(116, 0);
+    expect(h.free?.toeslag).toBe("kinderopvang");
+    expect((h.free?.best.back ?? 0) - (h.free?.best.deposit ?? 0)).toBeGreaterThan(150);
+    // The most you can put in while the household keeps at least as much as now.
+    const upTo = h.free?.upTo ?? 0;
+    expect(upTo).toBeGreaterThan(400);
+    expect(upTo).toBeLessThan(500);
+    expect(lijfrenteWhatIf(people, home, 0, upTo, 0, rules).back - upTo).toBeCloseTo(0, 0);
+  });
+
+  it("has no honey spot without jaarruimte", () => {
+    const h = honeySpot([{ jobs: [yearly(15_000)] }], noHome, 0, 0, rules);
+    expect(h.best).toBeNull();
+    expect(h.free).toBeNull();
   });
 });

@@ -370,15 +370,23 @@ export const en = {
     lijfrente: {
       title: "Save for your pension yourself",
       titleNl: "lijfrente",
-      answerOne: (deposit: string) => `Putting ${deposit} in a lijfrente gives you {amount} back this year.`,
-      answerBetter: (deposit: string, better: Who, otherBack: string, other: Who) =>
-        `Putting ${deposit} in a lijfrente gives the most back with ${better.inSentence}: {amount} this year, against ${otherBack} with ${other.inSentence}.`,
-      answerEither: (deposit: string) => `Putting ${deposit} in a lijfrente gives about {amount} back this year, with either of you.`,
-      answerType: "Type an amount to see what a lijfrente gives back.",
-      split: (tax: string, toeslagen: string | null, cost: string) =>
-        `That is ${tax} less income tax${toeslagen ? ` and ${toeslagen} more toeslagen` : ""}, so it costs you ${cost} now.`,
-      room: (p: Who | null, room: string) =>
-        p ? `${p.name} can put in up to ${room} this year (jaarruimte).` : `You can put in up to ${room} this year (jaarruimte).`,
+      honey: (p: Who | null) =>
+        p ? `Your honey spot: put {amount} in a lijfrente in ${p.you ? "your" : `${p.inSentence}'s`} name.` : "Your honey spot: put {amount} in a lijfrente.",
+      honeySplit: (per: string, back: string, cost: string, toeslagen: boolean) =>
+        `Of every €100 of it, ${per} comes back this year through lower tax${toeslagen ? " and higher toeslagen" : ""}: ${back} in all, so it costs you ${cost}.`,
+      honeyAll: (p: Who | null) =>
+        p ? `That is all of ${p.you ? "your" : `${p.inSentence}'s`} jaarruimte this year.` : "That is all of your jaarruimte this year.",
+      honeyAfter: (after: string, room: string) =>
+        `Above it, ${after} of every €100 comes back, up to the jaarruimte of ${room}. The honey spot is where each euro gives the most back.`,
+      free: (p: Who | null, deposit: string) =>
+        `Put ${deposit} in a lijfrente${p ? ` in ${p.you ? "your" : `${p.inSentence}'s`} name` : ""}: your household keeps {amount} more, and the ${deposit} goes to the pension.`,
+      freeWhy: (name: string, upTo: string) =>
+        `It brings the household income just under a point where ${name} drops at once. Up to ${upTo}, the household keeps at least as much as now, and all of it goes to the pension.`,
+      otherPartner: (p: Who, deposit: string, per: string) => `For ${p.inSentence}, the honey spot is ${deposit}: ${per} of every €100 comes back.`,
+      tryMore: "Try another amount",
+      tryNow: (amount: string) => `Now: ${amount}`,
+      tryResult: (p: Who | null, deposit: string, back: string, cost: string) =>
+        `${p ? `In ${p.you ? "your" : `${p.inSentence}'s`} name, ` : ""}${deposit} gives ${back} back this year, so it costs ${cost}.`,
       noRoom: (p: Who | null) =>
         p ? `${p.name} has no room for a lijfrente this year (jaarruimte €0).` : "You have no room for a lijfrente this year (jaarruimte €0).",
       noRoomAll: "Neither of you has room for a lijfrente this year (jaarruimte €0).",
@@ -386,12 +394,11 @@ export const en = {
         `Only ${room} counts for ${p.inSentence} this year: the rest is above the jaarruimte. Room left unused in the ten years before (reserveringsruimte) can add more; that is not included.`,
       factorAWarning: (p: Who) =>
         `${p.you ? "You build" : `${p.name} builds`} pension at work, so the jaarruimte is lower than shown. Type factor A from the pension overview (UPO) below.`,
-      bar: (p: Who, back: string, deposit: string) => `With ${p.inSentence}: ${back} back of ${deposit}`,
       legendBack: "Comes back this year",
       legendOwn: "You pay now",
       later:
         "The money stays locked until your pension. You pay income tax on it when it is paid out, usually at a lower rate after AOW age: a lijfrente moves tax to later.",
-      deposit: "What if you put in, per year",
+      deposit: "Amount per year",
       depositNl: "lijfrentepremie",
       factorAMore: "Pension at work (factor A)",
       factorANow: (values: string) => `Now: ${values}`,
@@ -406,11 +413,15 @@ export const en = {
         rate: (rate: string) => `${rate} of it`,
         factorA: (multiplier: string) => `Minus ${multiplier} × factor A`,
         room: "Jaarruimte this year",
+        honey: "Honey spot: put in",
         deductible: "Comes off the taxable income",
         tax: "Less income tax",
         toeslagen: "More toeslagen",
         back: "Back this year",
+        perHundred: "Back of every €100",
         steps: {
+          honey:
+            "The honey spot is the amount where each euro gives the most back. What comes back changes where your income crosses a tax zone or a point where a toeslag starts or stops, so the page checks every one of those points up to the jaarruimte.",
           deduction: "The deposit comes off your taxable income in box 1, as long as it fits in the jaarruimte.",
           rate: (top: string) =>
             `It saves tax at your own rate, up to ${top} in the top bracket. Unlike the mortgage interest, this deduction is not capped.`,
