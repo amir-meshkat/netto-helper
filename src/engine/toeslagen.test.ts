@@ -8,6 +8,7 @@ import {
   kinderopvangtoeslag,
   nextToeslagCliff,
   toeslagCliffs,
+  toeslagRunOut,
   toeslagen,
   zorgtoeslag,
   type Child,
@@ -235,5 +236,20 @@ describe("gradualToeslagen", () => {
 
   it("gives nothing for zorgtoeslag above the maximum vermogen", () => {
     expect(gradualToeslagen(household(45_000, { vermogen: 200_000 }), rules)).toBe(0);
+  });
+});
+
+describe("toeslagRunOut", () => {
+  it("gives the income where kindgebonden budget runs out: 39,141 + 5,160 / 7.6% for two young children", () => {
+    const ats = toeslagRunOut(household(0, { partner: true, children: [child(3), child(6)] }), rules);
+    expect(ats.some((at) => Math.abs(at - (39_141 + 5_160 / 0.076)) < 0.01)).toBe(true);
+    expect(kindgebondenBudget(household(39_141 + 5_160 / 0.076 - 1, { partner: true, children: [child(3), child(6)] }), rules).amount).toBeGreaterThan(0);
+  });
+
+  it("gives the income where huurtoeslag runs out: about 44,319 alone with 800 rent", () => {
+    const ats = toeslagRunOut(household(0, { rent: 800 }), rules);
+    const at = ats.find((x) => x > 44_000 && x < 44_400) ?? 0;
+    expect(huurtoeslag(household(at - 1, { rent: 800 }), rules).amount).toBeGreaterThan(0);
+    expect(huurtoeslag(household(at + 1, { rent: 800 }), rules).amount).toBe(0);
   });
 });

@@ -10,6 +10,10 @@ export interface PersonInput {
   side: SideInput | null;
   /** Factor A from the pension overview (UPO), for the lijfrente jaarruimte. Missing or empty: none. */
   factorA?: string;
+  /** Last year's income from work, for the jaarruimte. Missing or empty: this year's. */
+  lastYear?: string;
+  /** Unused lijfrente room from the ten years before (reserveringsruimte). Missing or empty: none. */
+  reservering?: string;
 }
 
 export interface HouseholdState {
@@ -86,7 +90,7 @@ function arePeople(value: unknown): value is PersonInput[] {
       typeof p.name === "string" &&
       isJobInput(p.job) &&
       (p.side === null || isSideInput(p.side)) &&
-      (p.factorA === undefined || typeof p.factorA === "string")
+      [p.factorA, p.lastYear, p.reservering].every((v) => v === undefined || typeof v === "string")
     );
   });
 }

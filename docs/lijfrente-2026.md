@@ -32,9 +32,9 @@ Amir's idea (27 September 2026): instead of a slider to explore, tell people the
 
 - **The honey spot** is the deposit where each euro gives the most back. What comes back per euro only changes
   where the income crosses a tax zone, a point where a toeslag starts or stops going down, or a toeslag that
-  drops at once. In between it runs in straight lines, so the best deposit is at one of those points or at the
-  whole jaarruimte. The engine checks all of them, plus an even grid of 100 steps for the places where a toeslag
-  runs out. When several amounts give the same back per euro, it takes the largest.
+  drops at once. In between it runs in straight lines, so the best deposit is at one of those points or at all
+  of the room. The engine checks all of them (see "How the honey spot is found" below). When several amounts
+  give the same back per euro, it takes the largest.
 - **The free spot:** just above a point where a toeslag drops at once (in practice a row of the
   kinderopvangtoeslag table), a small deposit can bring the household income under it. Then more comes back
   than goes in: the household keeps more and the deposit is in the pension. The page leads with that, and says
@@ -96,28 +96,38 @@ Sources to check:
 - https://www.belastingdienst.nl/wps/wcm/connect/nl/aftrek-en-kortingen/content/afbouw-tarief-aftrekposten-bij-hoog-inkomen
 - The Belastingdienst jaarruimte calculator (rekenhulp lijfrentepremie), in Mijn Belastingdienst.
 
-## Assumptions to discuss with Amir
+## Assumptions
 
-Agreed with Amir on 27 September 2026: 8 and 9. The others are still open.
+Status on 27 September 2026, after Amir asked to complete these steps: 2 and 4 are solved on the page, 8 and 9
+were agreed with Amir, and the rest are choices that stay.
 
-1. **A what-if, not part of "what you keep".** Putting money in a lijfrente is saving, not spending, and the page
-   does not know if you will do it, so the headline and the other sections do not change. The new section shows
-   what a deposit would give back this year.
-2. **This year's income stands in for last year's.** The jaarruimte for 2026 is based on 2025; the page uses the
-   income typed now.
-3. **Factor A is optional**, one per person, empty means 0. When someone has a pension premium at work and no
-   factor A, the page warns that the jaarruimte is lower than shown.
-4. **No reserveringsruimte.** Only this year's room counts; the page says that unused room from earlier years
-   can add more.
-5. **Tax later is not calculated.** The page says the money is taxed when paid out, usually at a lower rate after
-   AOW age, and that it is locked until then.
-6. **For a couple**, the same amount is worked out for each partner: a lijfrente premium belongs to the person who
-   pays it and cannot be divided like the mortgage. The page says who gets the most back.
-7. **With a mortgage**, the division of the eigen woning saldo is worked out again with the deposit.
-8. **The honey spot is the most back per euro**, not the most back in total: putting in more always gives more
-   back in total, but each extra euro can give less. On a tie the page takes the largest amount. *Agreed.*
+1. **Stays: a what-if, not part of "what you keep".** Putting money in a lijfrente is saving, not spending, and
+   the page does not know if you will do it, so the headline and the other sections do not change.
+2. **Solved: last year's income.** The jaarruimte for 2026 is based on 2025. An optional "Income from work last
+   year" per person replaces this year's income in the calculation.
+3. **Stays: factor A is optional**, one per person, empty means 0. When someone has a pension premium at work
+   and no factor A, the page warns that the jaarruimte is lower than shown. It cannot be estimated reliably
+   from the employee's premium alone.
+4. **Solved: unused room from earlier years.** An optional "Unused room from earlier years"
+   (reserveringsruimte) per person adds to the room, at most €42,753 in 2026. The honey spot looks at all of the
+   room. Example (a test): at €38,880 with €10,000 unused room, the room is €15,912.40 but the honey spot is
+   €9,144: down to €29,736 each €100 gives €55.88 back, below it only €35.75.
+5. **Stays: tax later is not calculated.** The page says the money is taxed when paid out, usually at a lower
+   rate after AOW age, and that it is locked until then. Future rates and credits are unknown.
+6. **Stays: for a couple**, the same amount is worked out for each partner: a lijfrente premium belongs to the
+   person who pays it and cannot be divided like the mortgage.
+7. **Stays: with a mortgage**, the division of the eigen woning saldo is worked out again with the deposit.
+8. **Agreed: the honey spot is the most back per euro**, not the most back in total: putting in more always
+   gives more back in total, but each extra euro can give less. On a tie the page takes the largest amount.
    Example at €80,000: €1,574 in gives €49.50 of every €100 back; all €18,248 gives more in total (€8,109) but
    only €44.44 of every €100, and "put in everything" says nothing new.
-9. **For a couple** the page leads with the partner whose honey spot gives the most back per euro (or a free
-   spot), and gives the other partner's in one line. Both partners can still do it; this only decides whose
-   honey spot comes first. *Agreed.*
+9. **Agreed: for a couple** the page leads with the partner whose honey spot gives the most back per euro (or a
+   free spot), and gives the other partner's in one line. Both partners can still do it; this only decides
+   whose honey spot comes first.
+
+## How the honey spot is found (27 September 2026)
+
+What comes back per euro runs in straight lines between a few points, so the page checks exactly those: the
+person's tax zones, where their tax reaches zero (the credits cover all of it), where each toeslag starts going
+down and where it runs out (`toeslagRunOut` in `engine/toeslagen.ts`), one cent past every toeslag that drops
+at once, and all of the room. A small even grid of 16 steps is only a safety net; the tests pass without it.

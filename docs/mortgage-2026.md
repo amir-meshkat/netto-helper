@@ -32,6 +32,23 @@ What it does change besides the bracket: the general tax credit (algemene heffin
 income. Between €29,736 and €78,423 it goes up by 6.398% of every euro of deduction, so there a deduction
 saves 37.56% + 6.398% = 43.958% (or 35.75% + 6.398% = 42.148% in the first bracket).
 
+## Other deductible home costs (added 27 September 2026)
+
+Besides the interest, a few other costs of the own home come off the same way, in the year you pay them:
+
+- **Erfpacht:** the yearly canon for ground lease, common in Amsterdam and some other cities. Buying off the
+  erfpacht is not deductible.
+- **Costs of getting the mortgage:** mortgage advice, valuation (taxatie), the NHG fee, and the notary for the
+  mortgage deed (hypotheekakte). Also when you raise the mortgage for a renovation.
+- **Not deductible:** the transfer tax (overdrachtsbelasting), the notary for the transfer deed (leveringsakte),
+  the buying agent, renovation and furniture.
+
+Worked example (a test): the same home as below, plus €1,200 erfpacht a year. Saldo €1,400 − €12,000 − €1,200 =
+−€11,800, so tax is €11,800 × 43.958% = €5,187.04 lower a year, €522.95 more than without the erfpacht.
+
+The page also takes the interest as typed from the yearly statement (jaaroverzicht), for anyone who has it:
+that is the real figure, while loan × rate is a little too high for a loan that is being paid off.
+
 ## Worked example (also a test)
 
 Alone, salary €4,000 a month with 8% holiday pay: €51,840 a year. Home with WOZ value €400,000, a loan of
@@ -82,31 +99,34 @@ Sources to check (not reachable from the cloud session):
 - https://www.belastingdienst.nl/wps/wcm/connect/nl/koopwoning/content/tariefsaanpassing-eigen-woning
 - https://www.belastingdienst.nl/wps/wcm/connect/fisin/fisin2025/fiscaal_partnerschap
 
-## Assumptions to discuss with Amir
+## Assumptions
 
-1. **Inputs: WOZ value, what is left of the loan, and the interest rate.** Interest per year = loan × rate.
-   With an annuity or linear mortgage the loan goes down during the year, so this is a little too high
-   (often 1% to 2% of the interest). Alternative: type the interest from the annual statement (jaaroverzicht),
-   as a second mode like the pension field. Not built yet.
-2. **All of the loan counts as eigenwoningschuld.** No check of the rules since 2013 (repaid in full within
-   30 years, at least annuity), the 30-year limit, the bijleenregeling or loan parts for other purposes.
-3. **Only interest is deducted.** Not included: erfpacht (ground rent, also deductible), costs of taking out
-   the mortgage in the year of buying (advice, notary for the mortgage deed, valuation), and the
-   eigenwoningforfait for part of a year after moving.
-4. **A partner on the page is a fiscal partner who owns the home together.** Living together and owning the
-   home together makes you fiscal partners, so this fits the most common case.
-5. **The page divides the saldo in the most favourable way**, as advisers do and, as far as we know, the
-   online aangifte suggests (to check). It compares
-   half each, all with one partner, all with the other, and every division where one partner's income reaches
-   the edge of a tax zone; one of those is always the best, because tax changes in straight lines between
-   those edges. When several divisions are equally good, it keeps half each.
-6. **Rent or own, not both.** Adding a mortgage hides the rent (and huurtoeslag), and the other way around.
-7. **Taxable income does not go below zero.** A negative box 1 income can be carried back or forward
-   (verliesverrekening); not included.
-8. **"What you keep" does not subtract the interest itself**, just as it does not subtract rent: housing costs
-   are not taken off the netto. The mortgage section shows the interest, what the tax pays back, and the
-   net cost per month.
-9. **Side income with a mortgage:** the side income section keeps each partner's share of the saldo as it is
-   now. In reality the best division could shift when the side income moves to the other partner.
-10. **No change to withholding.** Employers do not know about the mortgage, so the benefit comes back with the
-    aangifte, or monthly with a voorlopige aanslag. The page says so.
+Status on 27 September 2026, after Amir asked to complete these steps: 1 and 3 are solved on the page, 5 is
+reworded, and the rest are choices that stay, each said on the page where it matters.
+
+1. **Solved: interest from the annual statement.** Besides loan × rate (a little too high for a loan that is
+   being paid off), the interest can be typed from the yearly statement (jaaroverzicht): "How do you know the
+   interest?" in the mortgage block.
+2. **Stays: all of the loan counts as eigenwoningschuld.** No check of the rules since 2013 (repaid in full
+   within 30 years, at least annuity), the 30-year limit, the bijleenregeling or loan parts for other
+   purposes. Most people's whole mortgage counts; the page's "Mortgage" note says what is assumed.
+3. **Solved: other deductible home costs.** An optional "Other home costs" field takes erfpacht and the costs
+   of getting the mortgage. Still not included: owning the home for only part of the year (after moving).
+4. **Stays: a partner on the page is a fiscal partner who owns the home together.** Living together and
+   owning the home together makes you fiscal partners, so this fits the most common case.
+5. **Stays: the page divides the saldo in the most favourable way**, as advisers do. It compares half each,
+   all with one partner, all with the other, and every division where one partner's income reaches the edge of
+   a tax zone; one of those is always the best, because tax changes in straight lines between those edges.
+   When several divisions are equally good, it keeps half each. (The earlier line that the online aangifte
+   suggests this was not verified and is gone.)
+6. **Stays: rent or own, not both.** Adding a mortgage hides the rent (and huurtoeslag), and the other way
+   around.
+7. **Stays: taxable income does not go below zero.** A negative box 1 income can be carried back or forward
+   (verliesverrekening); rare for salaried people with a mortgage, not included.
+8. **Stays: "what you keep" does not subtract the interest itself**, just as it does not subtract rent: housing
+   costs are not taken off the netto. The mortgage section shows the interest, what comes back, and the net
+   cost per month.
+9. **Stays: side income with a mortgage** keeps each partner's share of the saldo as it is now. In reality the
+   best division could shift when the side income moves to the other partner; the difference is small.
+10. **Stays: no change to withholding.** Employers do not know about the mortgage, so the benefit comes back
+    with the aangifte, or monthly with a voorlopige aanslag. The page says so.

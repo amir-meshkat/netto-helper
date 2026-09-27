@@ -18,7 +18,10 @@ export interface ChildInput {
   care: CareInput | null;
 }
 
-/** An own home with a mortgage. Interest per year is taken as loan times rate. */
+/**
+ * An own home with a mortgage. The interest per year is loan times rate, or typed from the annual statement
+ * (mode "interest"). Fields added later are optional, so a mortgage saved before them still reads.
+ */
 export interface MortgageInput {
   /** WOZ value of the home. */
   woz: string;
@@ -26,7 +29,16 @@ export interface MortgageInput {
   loan: string;
   /** Interest rate in percent, for example "3.8". */
   rate: string;
+  /** How the interest is given: loan and rate (the default), or the interest from the annual statement. */
+  mode?: MortgageMode;
+  /** Interest paid per year, from the annual statement (jaaroverzicht). */
+  interest?: string;
+  /** Other deductible home costs per year: erfpacht, costs of the mortgage. */
+  costs?: string;
 }
+
+export type MortgageMode = "rate" | "interest";
+export const MORTGAGE_MODES: readonly MortgageMode[] = ["rate", "interest"];
 
 export interface HomeInput {
   children: ChildInput[];
@@ -39,7 +51,7 @@ export interface HomeInput {
   savings: string;
 }
 
-export type HomeTextKey = "age" | "hours" | "price" | "rent" | "savings" | "woz" | "loan" | "rate";
+export type HomeTextKey = "age" | "hours" | "price" | "rent" | "savings" | "woz" | "loan" | "rate" | "interest" | "costs";
 
 export const CHILDCARE_KINDS: readonly ChildcareKind[] = ["dagopvang", "bso", "gastouder"];
 
@@ -53,6 +65,8 @@ export const HOME_SLIDERS: Record<HomeTextKey, SliderRange> = {
   woz: { min: 0, max: 1_500_000, step: 5_000 },
   loan: { min: 0, max: 1_000_000, step: 5_000 },
   rate: { min: 0, max: 8, step: 0.05 },
+  interest: { min: 0, max: 40_000, step: 50 },
+  costs: { min: 0, max: 10_000, step: 50 },
 };
 
 export function newHome(): HomeInput {
@@ -61,7 +75,12 @@ export function newHome(): HomeInput {
 
 /** Starts empty: the answer waits until the WOZ value, loan and rate are typed. */
 export function newMortgage(): MortgageInput {
-  return { woz: "", loan: "", rate: "" };
+  return { woz: "", loan: "", rate: "", mode: "rate", interest: "", costs: "" };
+}
+
+/** Interest per year as the engine needs it: typed from the statement, or loan times rate. */
+function mortgageInterest(m: MortgageInput): number {
+  return m.mode === "interest" ? amount(m.interest ?? "") : amount(m.loan) * percentage(m.rate);
 }
 
 export function newChild(): ChildInput {
@@ -82,7 +101,7 @@ export function toEngineHome(input: HomeInput): Home {
   return {
     vermogen: amount(input.savings),
     rent: input.rent === null || m ? null : amount(input.rent),
-    owner: m ? { woz: amount(m.woz), interest: amount(m.loan) * percentage(m.rate) } : null,
+    owner: m ? { woz: amount(m.woz), interest: mortgageInterest(m), costs: amount(m.costs ?? "") } : null,
     allYoung: input.allYoung,
     children: input.children.map((child) => ({
       age: Math.floor(amount(child.age)),
@@ -101,7 +120,15 @@ export function isHomeInvalid(text: string, key?: HomeTextKey): boolean {
 function isMortgageInput(value: unknown): value is MortgageInput {
   if (typeof value !== "object" || value === null) return false;
   const m = value as Record<string, unknown>;
-  return typeof m.woz === "string" && typeof m.loan === "string" && typeof m.rate === "string";
+  const optional = (v: unknown) => v === undefined || typeof v === "string";
+  return (
+    typeof m.woz === "string" &&
+    typeof m.loan === "string" &&
+    typeof m.rate === "string" &&
+    (m.mode === undefined || MORTGAGE_MODES.includes(m.mode as MortgageMode)) &&
+    optional(m.interest) &&
+    optional(m.costs)
+  );
 }
 
 function isCareInput(value: unknown): value is CareInput {

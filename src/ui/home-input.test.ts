@@ -17,7 +17,20 @@ describe("toEngineHome", () => {
     expect(engine.owner?.woz).toBe(400_000);
     expect(engine.owner?.interest).toBeCloseTo(11_400, 6);
     expect(engine.rent).toBeNull();
-    expect(toEngineHome({ ...newHome(), mortgage: newMortgage() }).owner).toEqual({ woz: 0, interest: 0 });
+    expect(toEngineHome({ ...newHome(), mortgage: newMortgage() }).owner).toEqual({ woz: 0, interest: 0, costs: 0 });
+  });
+
+  it("takes the interest as typed from the annual statement in that mode, and adds other home costs", () => {
+    const mortgage = { ...newMortgage(), woz: "400000", loan: "300000", rate: "4", mode: "interest" as const, interest: "11.650", costs: "1200" };
+    expect(toEngineHome({ ...newHome(), mortgage }).owner).toEqual({ woz: 400_000, interest: 11_650, costs: 1_200 });
+    expect(toEngineHome({ ...newHome(), mortgage: { ...mortgage, mode: "rate" as const } }).owner?.interest).toBeCloseTo(12_000, 6);
+  });
+
+  it("reads a mortgage saved before the interest mode as loan and rate, without other costs", () => {
+    const old = { woz: "400000", loan: "300000", rate: "4" };
+    const home = { ...newHome(), mortgage: old };
+    expect(isHomeInput(home)).toBe(true);
+    expect(toEngineHome(home).owner).toEqual({ woz: 400_000, interest: 12_000, costs: 0 });
   });
 
   it("reads typed text the forgiving way", () => {
@@ -59,7 +72,7 @@ describe("toEngineHome", () => {
 });
 
 describe("HOME_SLIDERS", () => {
-  const keys: HomeTextKey[] = ["age", "hours", "price", "rent", "savings", "woz", "loan", "rate"];
+  const keys: HomeTextKey[] = ["age", "hours", "price", "rent", "savings", "woz", "loan", "rate", "interest", "costs"];
 
   it("covers the defaults without clamping them", () => {
     const care = newCare(rules);
@@ -72,6 +85,8 @@ describe("HOME_SLIDERS", () => {
       woz: "400000",
       loan: "300000",
       rate: "3.8",
+      interest: "11000",
+      costs: "1200",
     };
     for (const key of keys) expect(sliderPosition(defaults[key], HOME_SLIDERS[key])).toBe(parseNumber(defaults[key]));
   });

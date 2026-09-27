@@ -12,7 +12,9 @@ const m = t.mortgage;
 /** One sentence in euros, then what the interest really costs, with a bar of the part that comes back. */
 function answer(total: HouseholdTotal, without: HouseholdTotal, two: boolean): string {
   const w = total.eigenWoning;
-  if (!w || (w.interest <= 0 && w.forfait <= 0)) return `<p class="section-answer">${escapeHtml(m.typeFirst)}</p>`;
+  if (!w || (w.interest + w.costs <= 0 && w.forfait <= 0)) return `<p class="section-answer">${escapeHtml(m.typeFirst)}</p>`;
+  // Interest and the other deductible costs: what the household pays for the home loan.
+  const paid = w.interest + w.costs;
   const taxLower = without.work.tax - total.work.tax;
   const toeslagenUp = total.toeslagen.total - without.toeslagen.total;
   const toeslagenLine = toeslagenUp >= 12 ? `<p class="small">${escapeHtml(m.toeslagenUp(euros(toeslagenUp / 12)))}</p>` : "";
@@ -23,8 +25,8 @@ function answer(total: HouseholdTotal, without: HouseholdTotal, two: boolean): s
       <p class="section-answer">${withAmount(m.answerHigher, `<strong>${escapeHtml(euros(-taxLower / 12))}</strong>`)}</p>
       <p class="small muted">${escapeHtml(m.higherWhy)}</p>`;
   }
-  const back = Math.min(w.interest, taxLower + Math.max(0, toeslagenUp));
-  const own = w.interest - back;
+  const back = Math.min(paid, taxLower + Math.max(0, toeslagenUp));
+  const own = paid - back;
   const bar = stackedBar(
     [
       { tone: "netto", value: back },
@@ -41,7 +43,7 @@ function answer(total: HouseholdTotal, without: HouseholdTotal, two: boolean): s
   );
   return `
     <p class="section-answer">${withAmount(m.answerLower(two), `<strong>${escapeHtml(euros(taxLower / 12))}</strong>`)}</p>
-    <p class="small muted">${escapeHtml(m.cost(euros(w.interest / 12), euros(back / 12), euros(own / 12), toeslagenUp >= 0.5))}</p>
+    <p class="small muted">${escapeHtml(m.cost(euros(paid / 12), euros(back / 12), euros(own / 12), toeslagenUp >= 0.5, w.costs > 0))}</p>
     ${bar}
     ${keys}
     ${toeslagenLine}
@@ -66,6 +68,7 @@ function why(total: HouseholdTotal, without: HouseholdTotal, view: View): string
   const rows = [
     row(villa ? m.rowForfaitVilla : m.rowForfait(percent(mainRate)), `+ ${euros(w.forfait)}`),
     row(m.rowInterest, `− ${euros(w.interest)}`, "minus"),
+    ...(w.costs > 0 ? [row(m.rowCosts, `− ${euros(w.costs)}`, "minus")] : []),
     ...(w.hillen > 0 ? [row(m.rowHillen, `− ${euros(w.hillen)}`, "minus")] : []),
     row(m.rowSaldo, signed(w.saldo), "sum"),
     ...(two ? total.work.people.map((p, i) => row(m.rowShare(view.who(i)), signed(p.woning), "sub")) : []),

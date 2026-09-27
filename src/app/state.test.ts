@@ -16,7 +16,7 @@ describe("parseSavedState", () => {
   });
 
   it("keeps the lijfrente what-if and each person's factor A", () => {
-    const saved = { version: 3, people: [{ ...people[0], factorA: "1500" }], home: newHome(), lijfrente: "2500" };
+    const saved = { version: 3, people: [{ ...people[0], factorA: "1500", lastYear: "45000", reservering: "10000" }], home: newHome(), lijfrente: "2500" };
     expect(parseSavedState(JSON.stringify(saved))).toEqual(saved);
     expect(parseSavedState(JSON.stringify({ ...saved, people: [{ ...people[0], factorA: 3 }] }))).toBeNull();
   });

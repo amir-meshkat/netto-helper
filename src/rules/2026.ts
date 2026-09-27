@@ -75,7 +75,8 @@ export const rules2026: TaxRules = {
   // - Toeslagenkaart 2026 (Dienst Toeslagen, November 2025), docs/sources/toeslagenkaart-2026.pdf.
   // - Kinderopvangtoeslag table from rijksoverheid.nl, docs/sources/kinderopvangtoeslag-2026.md.
   // - Huurtoeslag changes from belastingdienst.nl, docs/sources/huurtoeslag-2026-wijzigingen.md.
-  // Figures marked "not verified" come from search summaries of official pages; see CLAUDE.md.
+  // Huurtoeslag figures beyond the card come from search summaries of official pages, the same in several
+  // sources (rechecked 27 September 2026); see CLAUDE.md.
   toeslagen: {
     zorgtoeslag: {
       // Not on the card, but with these the card's maximum toeslag comes out to the euro:

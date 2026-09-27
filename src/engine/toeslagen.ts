@@ -183,6 +183,29 @@ export function gradualToeslagen(h: ToeslagHousehold, rules: TaxRules): number {
   return zorg + kindgebondenBudget(h, rules).amount + huurtoeslag(h, rules).amount;
 }
 
+/**
+ * Incomes where a toeslag that goes down step by step reaches zero: kindgebonden budget, huurtoeslag, and the
+ * zorgtoeslag formula. Below them, the next euro of income costs toeslag; above them, it no longer does.
+ * The household's own income in `h` does not matter.
+ */
+export function toeslagRunOut(h: ToeslagHousehold, rules: TaxRules): number[] {
+  const t = rules.toeslagen;
+  const at = { ...h, income: 0 };
+  const points: number[] = [];
+  const k = kindgebondenBudget(at, rules);
+  if (k.maximum > 0) points.push(t.kindgebondenBudget.threshold[who(h)] + k.maximum / t.kindgebondenBudget.phaseOutRate);
+  const hu = huurtoeslag(at, rules);
+  const perMonth = hu.bands.toKwaliteitskorting + hu.bands.toAftopping + hu.bands.aboveAftopping;
+  if (perMonth > 0) {
+    const size = (h.partner ? 2 : 1) + h.children.length === 1 ? "one" : "more";
+    points.push(t.huurtoeslag.incomePoint[size] + (12 * perMonth) / t.huurtoeslag.phaseOutRate[size]);
+  }
+  const z = zorgtoeslag(at, rules);
+  const z0 = z.standaardpremie - t.zorgtoeslag.normpremieBase[who(h)] * t.zorgtoeslag.drempelinkomen;
+  if (z0 > 0) points.push(t.zorgtoeslag.drempelinkomen + z0 / t.zorgtoeslag.normpremieRate);
+  return points;
+}
+
 export interface ToeslagCliff {
   /** The first toetsingsinkomen where the toeslag is lower at once. */
   at: number;

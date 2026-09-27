@@ -130,3 +130,13 @@ describe("householdTotal with an own home", () => {
     expect(householdTotal([{ jobs: [yearlyJob(25_000)] }], home, rules).toeslagen.huurtoeslag.amount).toBe(0);
   });
 });
+
+describe("householdTotal with erfpacht", () => {
+  it("worked example: 1,200 erfpacht on top of 12,000 interest saves 5,187.04 a year at 51,840", () => {
+    const home = { vermogen: 0, children: [], rent: null, allYoung: false };
+    const without = householdNetto([{ jobs: [yearlyJob(51_840)] }], rules);
+    const withHome = householdTotal([{ jobs: [yearlyJob(51_840)] }], { ...home, owner: { woz: 400_000, interest: 12_000, costs: 1_200 } }, rules);
+    expect(without.tax - withHome.work.tax).toBeCloseTo(5_187.04, 2);
+    expect(withHome.toetsingsinkomen).toBeCloseTo(51_840 - 11_800, 6);
+  });
+});

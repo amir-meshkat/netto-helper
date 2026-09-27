@@ -1,6 +1,7 @@
 import type { TaxRules } from "../rules";
 import { householdTotal, toeslagHousehold, type Home, type HouseholdTotal, type PersonIncome } from "./household";
-import { toeslagCliffs, type ToeslagCliff } from "./toeslagen";
+import { personNetto } from "./person";
+import { toeslagCliffs, toeslagRunOut, type ToeslagCliff } from "./toeslagen";
 
 // Lijfrente: money you put away for your own pension comes off box 1 income, as long as it fits in the
 // jaarruimte. For the what-if section: what a deposit would give back this year. See docs/lijfrente-2026.md.
@@ -14,27 +15,49 @@ export interface Jaarruimte {
   beforeFactorA: number;
   /** What factor A takes off. */
   factorADeduction: number;
+  /** The jaarruimte itself. */
   amount: number;
+  /** Unused room from the ten years before (reserveringsruimte), as far as it counts this year. */
+  reservering: number;
+  /** All the room this year: jaarruimte plus reserveringsruimte. */
+  total: number;
 }
 
 /**
- * Room for a lijfrente premium this year. `workIncome` is salary after the pension premium plus profit before
- * the zzp deductions. The rule uses last year's income; the page uses this year's as an estimate.
+ * Room for a lijfrente premium this year. `workIncome` is last year's salary after the pension premium plus
+ * profit before the zzp deductions; `reservering` is unused room from the ten years before.
  */
-export function jaarruimte(workIncome: number, factorA: number, rules: TaxRules): Jaarruimte {
+export function jaarruimte(workIncome: number, factorA: number, rules: TaxRules, reservering = 0): Jaarruimte {
   const l = rules.lijfrente;
   const income = Math.min(Math.max(0, workIncome), l.maxIncome);
   const premiegrondslag = Math.max(0, income - l.franchise);
   const beforeFactorA = l.rate * premiegrondslag;
   const factorADeduction = l.factorAMultiplier * Math.max(0, factorA);
   const amount = Math.min(l.maxJaarruimte, Math.max(0, beforeFactorA - factorADeduction));
-  return { income, premiegrondslag, beforeFactorA, factorADeduction, amount };
+  const usable = Math.min(Math.max(0, reservering), l.maxReserveringsruimte);
+  return { income, premiegrondslag, beforeFactorA, factorADeduction, amount, reservering: usable, total: amount + usable };
+}
+
+/** What a person can add about their room, all optional. */
+export interface LijfrenteExtras {
+  /** Pension built at work last year, from the UPO. */
+  factorA?: number;
+  /** Last year's income from work; missing or null: this year's, as an estimate. */
+  lastYear?: number | null;
+  /** Unused room from the ten years before. */
+  reservering?: number;
+}
+
+/** The room of person p, from last year's income when it is given. */
+function roomOf(before: HouseholdTotal, p: number, extras: LijfrenteExtras, rules: TaxRules): Jaarruimte {
+  const income = extras.lastYear ?? before.work.people[p]?.incomeTax.workIncome ?? 0;
+  return jaarruimte(income, extras.factorA ?? 0, rules, extras.reservering ?? 0);
 }
 
 export interface LijfrenteWhatIf {
   deposit: number;
   room: Jaarruimte;
-  /** The part of the deposit that comes off the income: at most the jaarruimte. */
+  /** The part of the deposit that comes off the income: at most the room (jaarruimte plus reserveringsruimte). */
   deductible: number;
   /** Less income tax per year, for the household. */
   taxLower: number;
@@ -46,10 +69,30 @@ export interface LijfrenteWhatIf {
   cost: number;
 }
 
+/**
+ * The deposit where person p's tax reaches zero, because the credits cover all of it from there. Tax before
+ * the credits are capped runs in straight lines between the `points`, so the crossing is found between two.
+ */
+function zeroTaxDeposit(people: PersonIncome[], p: number, woning: number, points: number[], rules: TaxRules): number[] {
+  const person = people[p];
+  if (!person) return [];
+  const beforeCap = (d: number) => {
+    const t = personNetto(person.jobs, rules, person.side ?? null, woning, (person.lijfrente ?? 0) + d).incomeTax;
+    return t.box1.total + t.topBracketAdjustment - t.generalCredit - t.labourCredit;
+  };
+  const sorted = [...new Set(points)].sort((a, b) => a - b);
+  const values = sorted.map(beforeCap);
+  for (let i = 1; i < sorted.length; i++) {
+    const [x0, x1, y0, y1] = [sorted[i - 1] ?? 0, sorted[i] ?? 0, values[i - 1] ?? 0, values[i] ?? 0];
+    if (y0 > 0 && y1 <= 0 && y0 !== y1) return [x0 + (y0 / (y0 - y1)) * (x1 - x0)];
+  }
+  return [];
+}
+
 /** The effect of a deposit, measured against the household as it is (`before`). */
 function effect(people: PersonIncome[], home: Home, p: number, before: HouseholdTotal, room: Jaarruimte, deposit: number, rules: TaxRules): LijfrenteWhatIf {
   const amount = Math.max(0, deposit);
-  const deductible = Math.min(amount, room.amount);
+  const deductible = Math.min(amount, room.total);
   const after = householdTotal(
     people.map((person, i) => (i === p ? { ...person, lijfrente: (person.lijfrente ?? 0) + deductible } : person)),
     home,
@@ -62,10 +105,9 @@ function effect(people: PersonIncome[], home: Home, p: number, before: Household
 }
 
 /** What if person p puts `deposit` in a lijfrente this year: what comes back through tax and toeslagen. */
-export function lijfrenteWhatIf(people: PersonIncome[], home: Home, p: number, deposit: number, factorA: number, rules: TaxRules): LijfrenteWhatIf {
+export function lijfrenteWhatIf(people: PersonIncome[], home: Home, p: number, deposit: number, extras: LijfrenteExtras, rules: TaxRules): LijfrenteWhatIf {
   const before = householdTotal(people, home, rules);
-  const room = jaarruimte(before.work.people[p]?.incomeTax.workIncome ?? 0, factorA, rules);
-  return effect(people, home, p, before, room, deposit, rules);
+  return effect(people, home, p, before, roomOf(before, p, extras, rules), deposit, rules);
 }
 
 export interface HoneySpot {
@@ -74,7 +116,7 @@ export interface HoneySpot {
   best: LijfrenteWhatIf | null;
   /** What comes back of every 100 of the honey spot. */
   perHundred: number;
-  /** Of the next 100 after the honey spot, what comes back; null when the honey spot is the whole jaarruimte. */
+  /** Of the next 100 after the honey spot, what comes back; null when the honey spot is all of the room. */
   afterPerHundred: number | null;
   /**
    * When a deposit leaves the household with more money than it costs (just under a toeslag that drops at
@@ -86,23 +128,24 @@ export interface HoneySpot {
 
 /** Differences below this, per euro, count as the same rate: a tenth of a cent per 100. */
 const SAME_RATE = 0.00001;
-/** Steps of the even grid between 0 and the jaarruimte. */
-const GRID = 100;
+/** Steps of an even grid between 0 and the room: a safety net, the exact points below do the work. */
+const GRID = 16;
 
 /**
  * The honey spot for person p: which deposit gives the most back per euro. What comes back runs in
  * straight lines between the incomes where a rate changes, so the best deposit is at one of those points,
- * just past a toeslag that drops at once, or at the whole jaarruimte. They are all checked, with an even
- * grid on top for the places where a toeslag runs out.
+ * just past a toeslag that drops at once, or at all of the room. The points: the person's tax zones, where
+ * their tax reaches zero, where each toeslag starts going down or runs out, and every drop at once. A small
+ * even grid is a safety net for the rest (such as a mortgage division that shifts).
  */
-export function honeySpot(people: PersonIncome[], home: Home, p: number, factorA: number, rules: TaxRules): HoneySpot {
+export function honeySpot(people: PersonIncome[], home: Home, p: number, extras: LijfrenteExtras, rules: TaxRules): HoneySpot {
   const before = householdTotal(people, home, rules);
   const person = before.work.people[p];
-  const room = jaarruimte(person?.incomeTax.workIncome ?? 0, factorA, rules);
+  const room = roomOf(before, p, extras, rules);
   const none: HoneySpot = { room, best: null, perHundred: 0, afterPerHundred: null, free: null };
-  if (!person || room.amount < 1) return none;
+  if (!person || room.total < 1) return none;
 
-  const top = room.amount;
+  const top = room.total;
   const income = before.toetsingsinkomen;
   const g = rules.generalCredit;
   const z = rules.toeslagen;
@@ -110,17 +153,21 @@ export function honeySpot(people: PersonIncome[], home: Home, p: number, factorA
   const who = partner ? "partner" : "alone";
   // Where the person's own tax rate changes, and where a toeslag starts going down, as a deposit.
   const own = [0, ...rules.box1Brackets.map((b) => b.upTo), g.phaseOutStart, g.phaseOutStart + g.max / g.phaseOutRate].map((edge) => person.taxable - edge);
+  const toeslagHome = toeslagHousehold(before.work, home);
   const household = [
     z.zorgtoeslag.drempelinkomen,
     z.kindgebondenBudget.threshold[who],
     z.huurtoeslag.incomePoint.one,
     z.huurtoeslag.incomePoint.more,
+    ...toeslagRunOut(toeslagHome, rules),
   ].map((edge) => income - edge);
   // One cent past each toeslag that drops at once, so the household income is under it.
-  const allCliffs = toeslagCliffs({ ...toeslagHousehold(before.work, home), income: 0 }, rules);
+  const allCliffs = toeslagCliffs({ ...toeslagHome, income: 0 }, rules);
   const cliffs = allCliffs.map((c) => income - c.at + 1.01);
   const grid = Array.from({ length: GRID }, (_, k) => ((k + 1) / GRID) * top);
-  const deposits = [...new Set([Math.min(100, top), ...own, ...household, ...cliffs, ...grid].filter((d) => d > 0.005 && d <= top))].sort((a, b) => a - b);
+  const points = [Math.min(100, top), top, ...own, ...household, ...cliffs, ...grid].filter((d) => d > 0.005 && d <= top);
+  const zero = zeroTaxDeposit(people, p, person.woning, [0, ...points], rules);
+  const deposits = [...new Set([...points, ...zero])].sort((a, b) => a - b);
   const results = deposits.map((d) => effect(people, home, p, before, room, d, rules));
 
   // Most back per euro; on a tie, the largest deposit.

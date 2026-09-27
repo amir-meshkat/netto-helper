@@ -3,7 +3,19 @@ import type { ChildcareKind, TaxRules } from "../rules";
 import { escapeHtml } from "./dom";
 import { checkbox, markInvalid, textField } from "./fields";
 import { euros, eurosCents } from "./format";
-import { CHILDCARE_KINDS, HOME_SLIDERS, isHomeInvalid, newCare, toEngineHome, type ChildInput, type HomeInput, type HomeTextKey } from "./home-input";
+import {
+  CHILDCARE_KINDS,
+  HOME_SLIDERS,
+  MORTGAGE_MODES,
+  isHomeInvalid,
+  newCare,
+  toEngineHome,
+  type ChildInput,
+  type HomeInput,
+  type HomeTextKey,
+  type MortgageInput,
+  type MortgageMode,
+} from "./home-input";
 import type { Unit } from "./slider";
 
 // The inputs for toeslagen and the own home: children (with optional childcare), rent or a mortgage, and
@@ -81,9 +93,28 @@ function rentBlock(home: HomeInput, rules: TaxRules): string {
     </div>`;
 }
 
-function mortgageBlock(home: HomeInput): string {
+/** Short summary under the other costs toggle, so the value is never hidden. */
+export function costsNow(m: MortgageInput): string {
+  const costs = toEngineHome({ children: [], rent: null, mortgage: m, allYoung: false, savings: "" }).owner?.costs ?? 0;
+  return f.costsNow(costs > 0 ? euros(costs) : null);
+}
+
+function mortgageBlock(home: HomeInput, costsOpen: boolean): string {
   const m = home.mortgage;
   if (!m) return "";
+  const mode = m.mode ?? "rate";
+  const radio = (value: MortgageMode) => `
+    <label><input type="radio" id="mortgage-mode-${value}" name="mortgage-mode" value="${value}"
+      data-mortgage-mode${mode === value ? " checked" : ""}><span>${escapeHtml(f.mortgageModes[value])}</span></label>`;
+  const interest =
+    mode === "interest"
+      ? `${field("home-interest", "interest", m.interest ?? "", f.interest, "€", { nl: f.interestNl })}
+         <p class="hint">${escapeHtml(f.interestHint)}</p>`
+      : `<div class="grid-2">
+           ${field("home-loan", "loan", m.loan, f.loan, "€", { nl: f.loanNl })}
+           ${field("home-rate", "rate", m.rate, f.rate, "%", { nl: f.rateNl })}
+         </div>
+         <p class="hint">${escapeHtml(f.mortgageHint)}</p>`;
   return `
     <div class="job mortgage">
       <div class="job-head">
@@ -92,11 +123,16 @@ function mortgageBlock(home: HomeInput): string {
       </div>
       ${field("home-woz", "woz", m.woz, f.woz, "€", { nl: f.wozNl })}
       <p class="hint">${escapeHtml(f.wozHint)}</p>
-      <div class="grid-2">
-        ${field("home-loan", "loan", m.loan, f.loan, "€", { nl: f.loanNl })}
-        ${field("home-rate", "rate", m.rate, f.rate, "%", { nl: f.rateNl })}
-      </div>
-      <p class="hint">${escapeHtml(f.mortgageHint)}</p>
+      <fieldset class="pension">
+        <legend>${escapeHtml(f.mortgageMode)}</legend>
+        <div class="segmented">${MORTGAGE_MODES.map(radio).join("")}</div>
+      </fieldset>
+      ${interest}
+      <details class="more" data-key="more-mortgage"${costsOpen ? " open" : ""}>
+        <summary>${escapeHtml(f.costsMore)}<span class="details-now" id="home-costs-now">${escapeHtml(costsNow(m))}</span></summary>
+        ${field("home-costs", "costs", m.costs ?? "", f.costs, "€")}
+        <p class="hint">${escapeHtml(f.costsHint)}</p>
+      </details>
     </div>`;
 }
 
@@ -107,7 +143,7 @@ export function savingsNow(home: HomeInput): string {
 }
 
 /** Children, rent or a mortgage, and savings, with buttons to add what applies. A household rents or owns, not both. */
-export function homeFields(home: HomeInput, rules: TaxRules, savingsOpen: boolean): string {
+export function homeFields(home: HomeInput, rules: TaxRules, savingsOpen: boolean, costsOpen = false): string {
   const limits = rules.toeslagen;
   const neither = home.rent === null && home.mortgage === null;
   const add = (action: string, label: string) => `<button type="button" class="btn-add" data-action="${action}">${escapeHtml(label)}</button>`;
@@ -117,7 +153,7 @@ export function homeFields(home: HomeInput, rules: TaxRules, savingsOpen: boolea
       <p class="hint">${escapeHtml(f.hint)}</p>
       ${home.children.map((child, c) => childBlock(child, c, rules)).join("")}
       ${rentBlock(home, rules)}
-      ${mortgageBlock(home)}
+      ${mortgageBlock(home, costsOpen)}
       <div class="add-row">
         ${add("add-child", f.addChild)}
         ${neither ? add("add-rent", f.addRent) + add("add-mortgage", f.addMortgage) : ""}
@@ -139,12 +175,14 @@ export function handleHomeInput(event: Event, home: HomeInput): boolean {
   if (key === "age" && child) child.age = el.value;
   else if ((key === "hours" || key === "price") && child?.care) child.care[key] = el.value;
   else if (key === "rent" && home.rent !== null) home.rent = el.value;
-  else if ((key === "woz" || key === "loan" || key === "rate") && home.mortgage) home.mortgage[key] = el.value;
+  else if ((key === "woz" || key === "loan" || key === "rate" || key === "interest" || key === "costs") && home.mortgage) home.mortgage[key] = el.value;
   else if (key === "savings") home.savings = el.value;
   else return false;
   markInvalid(el, isHomeInvalid(el.value, key));
   const now = document.getElementById("home-savings-now");
   if (now && key === "savings") now.textContent = savingsNow(home);
+  const costs = document.getElementById("home-costs-now");
+  if (costs && key === "costs" && home.mortgage) costs.textContent = costsNow(home.mortgage);
   return true;
 }
 
@@ -155,6 +193,10 @@ export function handleHomeChange(event: Event, home: HomeInput, rules: TaxRules)
   if (el.type === "checkbox" && el.dataset.homeSwitch === "allYoung") {
     home.allYoung = el.checked;
     return "update";
+  }
+  if (el.type === "radio" && el.dataset.mortgageMode !== undefined && el.checked && home.mortgage) {
+    home.mortgage.mode = el.value as MortgageMode;
+    return "redraw";
   }
   if (el.type === "radio" && el.dataset.careKind !== undefined && el.checked) {
     const child = home.children[Number(el.dataset.careKind)];

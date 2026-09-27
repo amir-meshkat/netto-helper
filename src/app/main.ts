@@ -126,7 +126,7 @@ function renderInputs(focusId?: string): void {
       ? `<button type="button" class="btn-add" data-action="add-person">${escapeHtml(t.common.addPartner)}</button>`
       : "";
   inputs.innerHTML =
-    state.people.map((_, p) => personInputs(p)).join("") + addPartner + homeFields(state.home, rules, view.details.isOpen("more-home"));
+    state.people.map((_, p) => personInputs(p)).join("") + addPartner + homeFields(state.home, rules, view.details.isOpen("more-home"), view.details.isOpen("more-mortgage"));
   if (focusId) document.getElementById(focusId)?.focus();
 }
 
@@ -169,7 +169,7 @@ function update(): void {
 /** For typing and dragging: many events, one redraw per frame. */
 const updateSoon = oncePerFrame(update);
 linkSliders();
-initLowerTax(state, updateSoon);
+initLowerTax(state, view, updateSoon);
 
 // ---------- events ----------
 

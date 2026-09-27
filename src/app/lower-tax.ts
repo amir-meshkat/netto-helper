@@ -1,6 +1,6 @@
 import type { Home, HouseholdTotal, PersonIncome } from "../engine/household";
-import { honeySpot, lijfrenteWhatIf, type HoneySpot } from "../engine/lijfrente";
-import { t } from "../i18n";
+import { honeySpot, lijfrenteWhatIf, type HoneySpot, type LijfrenteExtras } from "../engine/lijfrente";
+import { t, type Who } from "../i18n";
 import { legend, stackedBar } from "../ui/components";
 import { byId, escapeHtml, withAmount } from "../ui/dom";
 import { markInvalid, textField } from "../ui/fields";
@@ -27,7 +27,26 @@ const amount = (text: string) => Math.max(0, parseNumber(text) ?? 0);
 const isInvalid = (text: string) => text.trim() !== "" && parseNumber(text) === null;
 const gain = (h: HoneySpot) => (h.free ? h.free.best.back - h.free.best.deposit : -Infinity);
 
-/** Factor A per person, and another amount to try. Built again only when the people or their names change. */
+/** What a person can add about their room: factor A, last year's income, unused room from earlier years. */
+type RoomKey = "factorA" | "lastYear" | "reservering";
+const ROOM_KEYS: readonly RoomKey[] = ["factorA", "lastYear", "reservering"];
+const ROOM_SLIDERS: Record<RoomKey, SliderRange> = {
+  factorA: FACTOR_A_SLIDER,
+  lastYear: { min: 0, max: 150_000, step: 500 },
+  reservering: { min: 0, max: 43_000, step: 100 },
+};
+
+/** The extras for the engine: empty text is "not given". */
+function extrasOf(person: HouseholdState["people"][number] | undefined): LijfrenteExtras {
+  const last = person?.lastYear ?? "";
+  return {
+    factorA: amount(person?.factorA ?? ""),
+    lastYear: last.trim() === "" || parseNumber(last) === null ? null : amount(last),
+    reservering: amount(person?.reservering ?? ""),
+  };
+}
+
+/** The room fields per person, and another amount to try. Built again only when the people or their names change. */
 function renderControls(state: HouseholdState, view: View): void {
   const box = byId("lijfrente-controls");
   const two = state.people.length > 1;
@@ -35,24 +54,33 @@ function renderControls(state: HouseholdState, view: View): void {
   if (box.dataset.key === key) return;
   box.dataset.key = key;
   const deposit = state.lijfrente ?? EXAMPLE_DEPOSIT;
-  const factorFields = state.people
-    .map((person, p) =>
-      textField({
-        id: `factor-a-${p}`,
-        value: person.factorA ?? "",
-        label: l.factorA(two ? view.who(p) : null),
-        unit: "",
-        invalid: isInvalid(person.factorA ?? ""),
-        data: { "factor-a": String(p) },
-        slider: FACTOR_A_SLIDER,
-      }),
-    )
+  const max = euros(view.rules.lijfrente.maxReserveringsruimte);
+  const labels: Record<RoomKey, (p: Who | null) => string> = { factorA: l.factorA, lastYear: l.lastYear, reservering: l.reservering };
+  const nl: Record<RoomKey, string | undefined> = { factorA: undefined, lastYear: undefined, reservering: l.reserveringNl };
+  const hints: Record<RoomKey, string> = { factorA: l.factorAHint, lastYear: l.lastYearHint, reservering: l.reserveringHint(max) };
+  const blocks = state.people
+    .map((person, p) => {
+      const fields = ROOM_KEYS.map((k) => {
+        const value = person[k] ?? "";
+        return `${textField({
+          id: `room-${k}-${p}`,
+          value,
+          label: labels[k](two ? view.who(p) : null),
+          nl: nl[k],
+          unit: k === "factorA" ? "" : "€",
+          invalid: isInvalid(value),
+          data: { room: k, p: String(p) },
+          slider: ROOM_SLIDERS[k],
+        })}${two ? "" : `<p class="hint">${escapeHtml(hints[k])}</p>`}`;
+      }).join("");
+      return `<div>${fields}</div>`;
+    })
     .join("");
+  const sharedHints = two ? ROOM_KEYS.map((k) => `<p class="hint">${escapeHtml(hints[k])}</p>`).join("") : "";
   box.innerHTML = `
     <details class="more" data-key="more-factor-a"${view.details.openIf("more-factor-a")}>
-      <summary>${escapeHtml(l.factorAMore)}<span class="details-now" id="factor-a-now">${escapeHtml(factorANow(state))}</span></summary>
-      ${two ? `<div class="grid-2">${factorFields}</div>` : factorFields}
-      <p class="hint">${escapeHtml(l.factorAHint)}</p>
+      <summary>${escapeHtml(l.roomMore)}<span class="details-now" id="room-now">${escapeHtml(roomNow(state, view))}</span></summary>
+      ${two ? `<div class="grid-2">${blocks}</div>${sharedHints}` : blocks}
     </details>
     <details class="more" data-key="more-lijfrente-try"${view.details.openIf("more-lijfrente-try")}>
       <summary>${escapeHtml(l.tryMore)}<span class="details-now" id="lijfrente-try-now">${escapeHtml(l.tryNow(euros(amount(deposit))))}</span></summary>
@@ -61,9 +89,17 @@ function renderControls(state: HouseholdState, view: View): void {
     </details>`;
 }
 
-function factorANow(state: HouseholdState): string {
-  const values = state.people.map((person) => amount(person.factorA ?? "")).filter((v) => v > 0);
-  return l.factorANow(values.length > 0 ? values.map(euros).join(", ") : l.factorANone);
+/** Short summary under the toggle, so what was typed is never hidden. */
+function roomNow(state: HouseholdState, view: View): string {
+  const two = state.people.length > 1;
+  const items = state.people.flatMap((person, p) =>
+    ROOM_KEYS.flatMap((k) => {
+      const text = person[k] ?? "";
+      if (text.trim() === "" || parseNumber(text) === null) return [];
+      return [`${two ? `${view.who(p).name}: ` : ""}${l.roomItems[k]} ${euros(amount(text))}`];
+    }),
+  );
+  return l.roomNow(items.length > 0 ? items.join(", ") : l.roomNone);
 }
 
 /** Which person leads: a free spot first (the most gain), then the most back per euro. */
@@ -105,7 +141,7 @@ function answer(spots: HoneySpot[], total: HouseholdTotal, state: HouseholdState
     bar = stackedBar([{ tone: "netto", value: f.back }], `${l.legendBack} ${euros(f.back)}`);
   } else {
     const b = h.best;
-    const room = h.afterPerHundred === null ? l.honeyAll(who) : l.honeyAfter(eurosCents(h.afterPerHundred), euros(h.room.amount));
+    const room = h.afterPerHundred === null ? l.honeyAll(who, h.room.reservering > 0) : l.honeyAfter(eurosCents(h.afterPerHundred), euros(h.room.total));
     lines = `
       <p class="section-answer">${withAmount(l.honey(who), strong(euros(b.deposit)))}</p>
       ${small(l.honeySplit(eurosCents(h.perHundred), euros(b.back), euros(b.cost), b.toeslagenUp >= 0.5))}
@@ -144,17 +180,17 @@ function tryResult(people: PersonIncome[], home: Home, state: HouseholdState, vi
   const two = people.length > 1;
   return people
     .map((_, p) => {
-      const r = lijfrenteWhatIf(people, home, p, deposit, amount(state.people[p]?.factorA ?? ""), view.rules);
+      const r = lijfrenteWhatIf(people, home, p, deposit, extrasOf(state.people[p]), view.rules);
       const who = two ? view.who(p) : null;
-      if (r.room.amount <= 0) return `<p class="small">${escapeHtml(l.noRoom(who))}</p>`;
-      const above = deposit > r.room.amount + 0.5 ? ` ${l.aboveRoom(view.who(p), euros(r.room.amount))}` : "";
+      if (r.room.total <= 0) return `<p class="small">${escapeHtml(l.noRoom(who))}</p>`;
+      const above = deposit > r.room.total + 0.5 ? ` ${l.aboveRoom(view.who(p), euros(r.room.total))}` : "";
       return `<p class="small">${escapeHtml(l.tryResult(who, euros(deposit), euros(r.back), euros(r.cost)) + above)}</p>`;
     })
     .join("");
 }
 
 /** The jaarruimte step by step, and the honey spot's effect, per person. */
-function why(spots: HoneySpot[], view: View): string {
+function why(spots: HoneySpot[], state: HouseholdState, view: View): string {
   const { rules } = view;
   const r = rules.lijfrente;
   const w = l.why;
@@ -166,12 +202,15 @@ function why(spots: HoneySpot[], view: View): string {
   // The free spot when there is one, otherwise the honey spot.
   const shown = (h: HoneySpot) => h.free?.best ?? h.best;
   const rows = [
-    row(w.income, (h) => euros(h.room.income)),
+    row(state.people.some((person) => extrasOf(person).lastYear !== null) ? w.incomeLastYear : w.income, (h) => euros(h.room.income)),
     row(w.franchise, () => `− ${euros(r.franchise)}`, "minus"),
     row(w.base, (h) => euros(h.room.premiegrondslag), "sum"),
     row(w.rate(percent(r.rate)), (h) => euros(h.room.beforeFactorA)),
     row(w.factorA(String(r.factorAMultiplier)), (h) => `− ${euros(h.room.factorADeduction)}`, "minus"),
     row(w.room, (h) => euros(h.room.amount), "sum"),
+    ...(spots.some((h) => h.room.reservering > 0)
+      ? [row(w.reservering, (h) => `+ ${euros(h.room.reservering)}`), row(w.total, (h) => euros(h.room.total), "sum")]
+      : []),
     row(w.honey, (h) => euros(shown(h)?.deposit ?? 0)),
     row(w.tax, (h) => euros(shown(h)?.taxLower ?? 0), "sub"),
     row(w.toeslagen, (h) => euros(shown(h)?.toeslagenUp ?? 0), "sub"),
@@ -196,7 +235,7 @@ function why(spots: HoneySpot[], view: View): string {
 }
 
 /** Texts that never change, and the inputs inside the section. Call once. */
-export function initLowerTax(state: HouseholdState, changed: () => void): void {
+export function initLowerTax(state: HouseholdState, view: View, changed: () => void): void {
   byId("lower-tax-title").textContent = s.title;
   byId("lower-tax-intro").textContent = s.intro;
   byId("lijfrente-title").innerHTML = `${escapeHtml(l.title)} <span class="nl">(${escapeHtml(l.titleNl)})</span>`;
@@ -209,12 +248,13 @@ export function initLowerTax(state: HouseholdState, changed: () => void): void {
       state.lijfrente = el.value;
       const now = document.getElementById("lijfrente-try-now");
       if (now) now.textContent = l.tryNow(euros(amount(el.value)));
-    } else if (el.dataset.factorA !== undefined) {
-      const person = state.people[Number(el.dataset.factorA)];
-      if (!person) return;
-      person.factorA = el.value;
-      const now = document.getElementById("factor-a-now");
-      if (now) now.textContent = factorANow(state);
+    } else if (el.dataset.room !== undefined) {
+      const person = state.people[Number(el.dataset.p)];
+      const key = el.dataset.room as RoomKey;
+      if (!person || !ROOM_KEYS.includes(key)) return;
+      person[key] = el.value;
+      const now = document.getElementById("room-now");
+      if (now) now.textContent = roomNow(state, view);
     } else {
       return;
     }
@@ -229,8 +269,8 @@ export function renderLowerTax(people: PersonIncome[], home: Home, total: Househ
   el.hidden = total.work.gross + total.work.profit <= 0;
   if (el.hidden) return;
   renderControls(state, view);
-  const spots = people.map((_, p) => honeySpot(people, home, p, amount(state.people[p]?.factorA ?? ""), view.rules));
+  const spots = people.map((_, p) => honeySpot(people, home, p, extrasOf(state.people[p]), view.rules));
   byId("lijfrente-answer").innerHTML = answer(spots, total, state, view);
   byId("lijfrente-try").innerHTML = tryResult(people, home, state, view);
-  byId("lijfrente-why").innerHTML = why(spots, view);
+  byId("lijfrente-why").innerHTML = why(spots, state, view);
 }

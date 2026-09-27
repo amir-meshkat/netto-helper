@@ -40,7 +40,7 @@ export const en = {
       "Indicative only, not tax advice. Figures for 2026, for people below AOW age. Rounding can differ a few euros from the Belastingdienst.",
     notIncludedTitle: "Not included yet",
     notIncluded:
-      "Deductions besides the mortgage interest and a lijfrente, savings in box 3, reserveringsruimte for a lijfrente, special bonus rates, business losses, the kleineondernemersregeling (KOR), investment deductions, and people at AOW age. For toeslagen: other people living with you besides your partner and children, and special situations. On salary your employer pays the Zvw health contribution; on side income you pay it yourself, and that is included.",
+      "Deductions besides the own home and a lijfrente, savings in box 3, special bonus rates, business losses, the kleineondernemersregeling (KOR), investment deductions, and people at AOW age. For toeslagen: other people living with you besides your partner and children, and special situations. On salary your employer pays the Zvw health contribution; on side income you pay it yourself, and that is included.",
     netto: "Netto: yours to keep",
     tax: "Income tax and national insurance",
     taxAndZvw: "Income tax, national insurance and Zvw",
@@ -329,15 +329,16 @@ export const en = {
     answerHigher: "Owning your home adds {amount} per month to your tax.",
     noEffect: "At this income the mortgage does not change your income tax: the tax credits already cover all of it.",
     typeFirst: "Type the WOZ value, what is left of the loan and the interest rate to see what the mortgage does to your tax.",
-    cost: (interest: string, back: string, own: string, toeslagen: boolean) =>
-      `Of ${interest} interest per month, ${back} comes back through lower tax${toeslagen ? " and higher toeslagen" : ""}, so the interest costs you ${own} per month.`,
+    cost: (interest: string, back: string, own: string, toeslagen: boolean, costs: boolean) =>
+      `Of ${interest} ${costs ? "interest and other home costs" : "interest"} per month, ${back} comes back through lower tax${toeslagen ? " and higher toeslagen" : ""}, so ${costs ? "they cost" : "the interest costs"} you ${own} per month.`,
     toeslagenUp: (amount: string) => `Toeslagen look at the income after the deduction, so they go up by ${amount} per month.`,
     higherWhy: "The eigenwoningforfait is larger than the mortgage interest, so a small part of it is taxed as income.",
     legendBack: "Comes back to you",
     legendOwn: "You pay",
     rowForfait: (rate: string) => `Imputed income for the home, ${rate} of the WOZ value (eigenwoningforfait)`,
     rowForfaitVilla: "Imputed income for the home (eigenwoningforfait, with the rate above the villagrens)",
-    rowInterest: "Mortgage interest (hypotheekrente), loan × rate",
+    rowInterest: "Mortgage interest (hypotheekrente)",
+    rowCosts: "Other home costs: erfpacht, costs of the mortgage",
     rowHillen: "Deduction for little or no mortgage (Wet Hillen)",
     rowSaldo: "Balance in box 1",
     rowShare: (p: Who) => (p.you ? "Your share" : `${p.name}'s share`),
@@ -360,7 +361,7 @@ export const en = {
       "Your employer does not know about the mortgage, so the tax comes back with the aangifte. Ask the Belastingdienst for a voorlopige aanslag to get it back every month.",
     notesTitle: "Mortgage",
     notes:
-      "Interest is taken as loan × rate for the whole year, and the whole loan is taken to count for the deduction (eigenwoningschuld). Not included: erfpacht, the costs of taking out a mortgage, and part of a year. A partner on this page counts as your fiscal partner. The 2026 figures for the eigenwoningforfait and the Wet Hillen come from summaries of official pages and still need checking on belastingdienst.nl.",
+      "Interest is loan × rate for the whole year, or the interest typed from the annual statement, and the whole loan is taken to count for the deduction (eigenwoningschuld). Not included: owning the home for only part of the year. A partner on this page counts as your fiscal partner, and the page divides the home's balance between you in the way with the least tax. The 2026 figures for the eigenwoningforfait and the Wet Hillen come from summaries of official pages and still need checking on belastingdienst.nl.",
   },
 
   /** "What could lower your tax?": what-if options, worked out on the situation typed. Lijfrente first. */
@@ -374,10 +375,10 @@ export const en = {
         p ? `Your honey spot: put {amount} in a lijfrente in ${p.you ? "your" : `${p.inSentence}'s`} name.` : "Your honey spot: put {amount} in a lijfrente.",
       honeySplit: (per: string, back: string, cost: string, toeslagen: boolean) =>
         `Of every €100 of it, ${per} comes back this year through lower tax${toeslagen ? " and higher toeslagen" : ""}: ${back} in all, so it costs you ${cost}.`,
-      honeyAll: (p: Who | null) =>
-        p ? `That is all of ${p.you ? "your" : `${p.inSentence}'s`} jaarruimte this year.` : "That is all of your jaarruimte this year.",
+      honeyAll: (p: Who | null, withReservering: boolean) =>
+        `That is all of ${p ? (p.you ? "your" : `${p.inSentence}'s`) : "your"} room this year${withReservering ? ": the jaarruimte plus the unused room from earlier years" : " (jaarruimte)"}.`,
       honeyAfter: (after: string, room: string) =>
-        `Above it, ${after} of every €100 comes back, up to the jaarruimte of ${room}. The honey spot is where each euro gives the most back.`,
+        `Above it, ${after} of every €100 comes back, up to the room of ${room} this year. The honey spot is where each euro gives the most back.`,
       free: (p: Who | null, deposit: string) =>
         `Put ${deposit} in a lijfrente${p ? ` in ${p.you ? "your" : `${p.inSentence}'s`} name` : ""}: your household keeps {amount} more, and the ${deposit} goes to the pension.`,
       freeWhy: (name: string, upTo: string) =>
@@ -391,7 +392,7 @@ export const en = {
         p ? `${p.name} has no room for a lijfrente this year (jaarruimte €0).` : "You have no room for a lijfrente this year (jaarruimte €0).",
       noRoomAll: "Neither of you has room for a lijfrente this year (jaarruimte €0).",
       aboveRoom: (p: Who, room: string) =>
-        `Only ${room} counts for ${p.inSentence} this year: the rest is above the jaarruimte. Room left unused in the ten years before (reserveringsruimte) can add more; that is not included.`,
+        `Only ${room} counts for ${p.inSentence} this year: the rest is above the room. Room left unused in the ten years before (reserveringsruimte) can add more: type it under "Pension at work and earlier years".`,
       factorAWarning: (p: Who) =>
         `${p.you ? "You build" : `${p.name} builds`} pension at work, so the jaarruimte is lower than shown. Type factor A from the pension overview (UPO) below.`,
       legendBack: "Comes back this year",
@@ -400,19 +401,30 @@ export const en = {
         "The money stays locked until your pension. You pay income tax on it when it is paid out, usually at a lower rate after AOW age: a lijfrente moves tax to later.",
       deposit: "Amount per year",
       depositNl: "lijfrentepremie",
-      factorAMore: "Pension at work (factor A)",
-      factorANow: (values: string) => `Now: ${values}`,
-      factorANone: "none entered",
+      roomMore: "Pension at work and earlier years",
+      roomNow: (items: string) => `Now: ${items}`,
+      roomNone: "none entered",
+      roomItems: { factorA: "factor A", lastYear: "last year", reservering: "unused room" } as Record<"factorA" | "lastYear" | "reservering", string>,
       factorA: (p: Who | null) => (p ? `Factor A, ${p.name}` : "Factor A"),
       factorAHint:
-        "On the yearly pension overview (UPO) from your pension fund. It is the pension you built at work last year, and it lowers the room for a lijfrente. Leave it empty without a pension at work.",
+        "Factor A: on the yearly pension overview (UPO) from your pension fund. It is the pension you built at work last year, and it lowers the room for a lijfrente. Leave it empty without a pension at work.",
+      lastYear: (p: Who | null) => (p ? `Income from work last year, ${p.name}` : "Income from work last year"),
+      lastYearHint:
+        "Last year's income: the jaarruimte for 2026 is worked out on 2025. Salary after the pension premium, plus profit before the zzp deductions. Leave it empty to use this year's income.",
+      reservering: (p: Who | null) => (p ? `Unused room from earlier years, ${p.name}` : "Unused room from earlier years"),
+      reserveringNl: "reserveringsruimte",
+      reserveringHint: (max: string) =>
+        `Unused room: jaarruimte you did not use in the ten years before. The Belastingdienst's lijfrente calculator or your bank works it out. At most ${max} of it counts this year.`,
       why: {
         income: "Income from work: salary after pension premium, plus profit before the zzp deductions",
         franchise: "Minus the AOW-franchise",
         base: "Premiegrondslag",
         rate: (rate: string) => `${rate} of it`,
         factorA: (multiplier: string) => `Minus ${multiplier} × factor A`,
+        incomeLastYear: "Income from work last year, as typed",
         room: "Jaarruimte this year",
+        reservering: "Plus unused room from earlier years",
+        total: "Room this year",
         honey: "Honey spot: put in",
         deductible: "Comes off the taxable income",
         tax: "Less income tax",
@@ -421,20 +433,20 @@ export const en = {
         perHundred: "Back of every €100",
         steps: {
           honey:
-            "The honey spot is the amount where each euro gives the most back. What comes back changes where your income crosses a tax zone or a point where a toeslag starts or stops, so the page checks every one of those points up to the jaarruimte.",
-          deduction: "The deposit comes off your taxable income in box 1, as long as it fits in the jaarruimte.",
+            "The honey spot is the amount where each euro gives the most back. What comes back changes where your income crosses a tax zone or a point where a toeslag starts or stops, so the page checks every one of those points, up to all of your room this year.",
+          deduction: "The deposit comes off your taxable income in box 1, as long as it fits in the room: this year's jaarruimte, plus unused room from the ten years before.",
           rate: (top: string) =>
             `It saves tax at your own rate, up to ${top} in the top bracket. Unlike the mortgage interest, this deduction is not capped.`,
           credit: (from: string, to: string, rate: string) =>
             `It also lowers the income that the general tax credit and the toeslagen look at: between ${from} and ${to} it saves ${rate} more, and toeslagen can go up.`,
           room: (rate: string, franchise: string, max: string, multiplier: string) =>
-            `The jaarruimte is ${rate} of last year's income from work above ${franchise} (counting income up to ${max}), minus ${multiplier} × factor A. The page uses the income you typed now.`,
+            `The jaarruimte is ${rate} of last year's income from work above ${franchise} (counting income up to ${max}), minus ${multiplier} × factor A. Without last year's income, the page uses this year's.`,
         },
       },
     },
     notesTitle: "Lijfrente",
     notes:
-      "The lijfrente what-if uses the income typed now for last year's income. Not included: reserveringsruimte, and the tax when the lijfrente is paid out. The 2026 jaarruimte figures come from summaries of official pages and still need checking on belastingdienst.nl.",
+      "The lijfrente what-if uses this year's income for last year's, unless you type last year's. Not included: the tax when the lijfrente is paid out. The 2026 jaarruimte figures come from summaries of official pages and still need checking on belastingdienst.nl.",
   },
 
   /** The inputs for toeslagen and the own home: children and childcare, rent or a mortgage, savings. All optional. */
@@ -475,7 +487,17 @@ export const en = {
     rate: "Interest rate",
     rateNl: "hypotheekrente",
     mortgageHint:
-      "What you still owe on the loan for this home, and its interest rate per year. With several loan parts, add up the loans and use the average rate.",
+      "What you still owe on the loan for this home, and its interest rate per year. With several loan parts, add up the loans and use the average rate. Loan times rate is a little high for a loan you are paying off; the annual statement has the exact interest.",
+    mortgageMode: "How do you know the interest?",
+    mortgageModes: { rate: "Loan and rate", interest: "From the annual statement" } as Record<"rate" | "interest", string>,
+    interest: "Interest paid per year",
+    interestNl: "betaalde hypotheekrente",
+    interestHint: "On the yearly statement of your mortgage (jaaroverzicht), or in your bank's app. The interest only, not the repayment.",
+    costsMore: "Other home costs",
+    costsNow: (amount: string | null) => (amount ? `Now: ${amount}` : "Now: none entered"),
+    costs: "Other deductible costs per year",
+    costsHint:
+      "Erfpacht (the yearly canon), and in the year you buy or raise the mortgage: advice, valuation, the NHG fee and the notary for the mortgage deed. Not the transfer tax, the notary for the transfer deed or a buying agent.",
     savingsMore: "Savings and investments",
     savingsNl: "vermogen",
     savingsNow: (amount: string | null) => (amount ? `Now: ${amount}` : "Now: none entered"),
@@ -525,7 +547,7 @@ export const en = {
       huur: (counted: string, basis: string, perMonth: string, reduction: string, amount: string) =>
         `Rent counted ${counted} per month; you always pay the first ${basis} yourself. Of the rent above that, the toeslag pays 100%, then 65%, then 40%: ${perMonth} per month. Minus a part of the income above the income point (${reduction} a year) = ${amount} a year.`,
       huurUnverified:
-        "Some 2026 huurtoeslag figures (the basishuur, the income point and its percentage) come from summaries of official pages and still need checking on the pages themselves.",
+        "Some 2026 huurtoeslag figures (the basishuur, the bands, the income point and its percentage) come from summaries of official pages; several sources agree, but they are not yet read on the pages themselves.",
       kinderopvangChild: (n: number, share: string, price: string, hours: string, amount: string) =>
         `Child ${n}: ${share} of ${price} × ${hours} hours × 12 months = ${amount} a year.`,
       kinderopvangFirst: "The child with the most hours of childcare counts as the first child; the others get the percentage for the next child.",
@@ -533,7 +555,7 @@ export const en = {
     },
     notesTitle: "Toeslagen",
     notes:
-      "Worked out for the whole of 2026 on the combined taxable income, so for toeslagen it does not matter which partner earns it. A partner on this page counts as your toeslagpartner. Kinderopvangtoeslag assumes you both work every month. Some huurtoeslag figures still need checking on an official page.",
+      "Worked out for the whole of 2026 on the combined taxable income, so for toeslagen it does not matter which partner earns it. A partner on this page counts as your toeslagpartner. Kinderopvangtoeslag assumes you both work every month. Some huurtoeslag figures come from summaries of official pages.",
   },
 };
 

@@ -217,15 +217,15 @@ Huurtoeslag. From 2026: only the bare rent counts (no service costs), a higher r
 |---|---|---|
 | Rekengrens | €932.93 a month; €498.20 when everyone is 18, 19 or 20 (a child in the home lifts it) | card and page |
 | Maximum vermogen | €38,479 alone, €76,958 with toeslagpartner (and €38,479 per other resident, not modelled) | card |
-| Kwaliteitskortingsgrens | €498.20 | not verified: consistent with the young people's rekengrens, as in earlier years |
-| Aftoppingsgrens | €713.02 for 1 or 2 people, €764.14 for 3 or more | not verified: search, and 4.4% above 2025 like the kwaliteitskortingsgrens |
-| Share of the rent paid | 100% from the basishuur to the kwaliteitskortingsgrens, 65% up to the aftoppingsgrens, 40% above it for every household | not verified: Rijksoverheid factsheet via search |
-| Basishuur | €202.52 for one person, €200.71 for more people | not verified: search |
-| Income afbouw | 27% (one person) or 22% (more people) of the yearly income above €23,425 or €31,500 | not verified: Rijksoverheid summary via search |
+| Kwaliteitskortingsgrens | €498.20 | via search, the same in several sources: Rijksoverheid news of 25 November 2025, Volkshuisvesting Nederland, Woonbond |
+| Aftoppingsgrens | €713.02 for 1 or 2 people, €764.14 for 3 or more | via search, the same in several sources: Rijksoverheid news of 25 November 2025, Volkshuisvesting Nederland, Woonbond |
+| Share of the rent paid | 100% from the basishuur to the kwaliteitskortingsgrens, 65% up to the aftoppingsgrens, 40% above it for every household | via search, the same in several sources: Rijksoverheid news of 25 November 2025, Volkshuisvesting Nederland, Woonbond |
+| Basishuur | €202.52 for one person, €200.71 for more people | via search, the same in several sources: Rijksoverheid news of 25 November 2025, Volkshuisvesting Nederland, Woonbond |
+| Income afbouw | 27% (one person) or 22% (more people) of the yearly income above €23,425 or €31,500 | via search, the same in several sources: Rijksoverheid news of 25 November 2025, Volkshuisvesting Nederland, Woonbond |
 
 - Huurtoeslag per year = 12 × (the shares of the counted rent in each band) − the income afbouw, minimum 0.
 - Worked example: alone, bare rent €800, income €30,000: €295.68 + 65% × €214.82 + 40% × €86.98 = €470.11 a month, so €5,641.26 a year, minus 27% × €6,575 = €1,775.25, gives €3,866.01 a year.
-- The page says in "Show me why" and in the footer that some huurtoeslag figures still need checking.
+- Rechecked on 27 September 2026: every figure above is the same in several sources found by search. The pages themselves cannot be opened from the cloud session, so "Show me why" and the footer say the figures come from summaries of official pages. One site gives the rekengrens as €932.32; the Toeslagenkaart says €932.93, and the card wins.
 
 Kinderopvangtoeslag. Source: the Rijksoverheid page Amir pasted, `docs/sources/kinderopvangtoeslag-2026.md`, and the card.
 
@@ -244,7 +244,7 @@ How the page uses toeslagen:
 
 ## Mortgage 2026
 
-Milestone 8, first item, built on 26 September 2026 while Amir was away: the assumptions are listed in `docs/mortgage-2026.md` and still need his review. The figures come from search results quoting belastingdienst.nl, not from the site itself; check them there.
+Milestone 8, first item, built on 26 September 2026 while Amir was away. On 27 September Amir asked to complete it: the assumptions in `docs/mortgage-2026.md` are now marked solved or "stays", with the reason. The figures come from search results quoting belastingdienst.nl, not from the site itself; check them there.
 
 | Rule | 2026 |
 |---|---|
@@ -254,7 +254,8 @@ Milestone 8, first item, built on 26 September 2026 while Amir was away: the ass
 | Maximum rate of the deduction | 37.56%: in the top bracket 11.94% is added back (tariefsaanpassing), on the lower of the deduction and the income above €78,426 before it |
 
 - Saldo = forfait − mortgage interest − Hillen deduction. It is part of box 1 taxable income, so it also changes the general tax credit and the toetsingsinkomen for toeslagen. It does not change the labour tax credit (income from work) or the Zvw on side income (profit).
-- Interest per year = what is left of the loan × the interest rate. The whole loan is taken to count.
+- Interest per year = what is left of the loan × the interest rate, or typed from the yearly statement (jaaroverzicht): "How do you know the interest?" in the mortgage block. The whole loan is taken to count.
+- Other deductible home costs, optional under "Other home costs": the yearly erfpacht canon, and in the year of buying or raising the mortgage the costs of getting it (advice, valuation, NHG, notary for the mortgage deed). Not the transfer tax or the notary for the transfer deed. They come off like interest, and count for the Wet Hillen too.
 - Fiscal partners may divide the saldo in any proportion (half each if they do not choose). The page takes the division with the least tax together: `divideSaldo` in `engine/household.ts` checks half each, all with one partner, and every division where a partner's income reaches a rate change, which is always enough because tax runs in straight lines in between.
 - A household rents or owns: adding a mortgage hides the rent, and an owner gets no huurtoeslag.
 - "What you keep" does not subtract the interest, just as it does not subtract rent. The mortgage section shows the interest, what comes back through tax and toeslagen, and the net cost.
@@ -270,12 +271,12 @@ Milestone 8, second item (26 September 2026): Amir asked for options that could 
 | Income from work for this | salary after the employee pension premium, plus profit before the zzp deductions; not the own home |
 | Factor A | the pension built at work last year, on the pension overview (UPO) |
 | Deduction | the deposit within the jaarruimte comes off box 1 taxable income, at the full rate: no tariefsaanpassing |
-| Reserveringsruimte | unused room of the ten years before, at most €42,753: not included |
+| Reserveringsruimte | unused room of the ten years before, at most €42,753 counts this year; optional input per person |
 
 - The deduction lowers the income for the general tax credit and the toetsingsinkomen, so toeslagen can go up. The labour tax credit does not change.
-- It is a what-if: the headline and the other sections do not change. The section "What could lower your tax?" (`#lower-tax`) has its own inputs: factor A per person (optional; a warning shows when someone has a pension premium at work and no factor A), and behind "Try another amount" a deposit to try (saved, example €1,000).
-- The option leads with the **honey spot** (Amir's idea, 27 September 2026): the deposit where each euro gives the most back, the largest on a tie. `honeySpot` in `engine/lijfrente.ts` checks every point where a tax zone or toeslag rate changes, one cent past every toeslag that drops at once, the whole jaarruimte, and an even grid. When a deposit gives back more than it costs (just under a kinderopvangtoeslag step), the page leads with that **free spot**: "your household keeps €X more, and the deposit goes to the pension", and says up to which amount the household still keeps at least as much.
-- The page uses the income typed now for last year's income. The tax when the lijfrente is paid out is not calculated; the page says it moves tax to later and the money is locked until the pension.
+- It is a what-if: the headline and the other sections do not change. The section "What could lower your tax?" (`#lower-tax`) has its own inputs. Under "Pension at work and earlier years", per person and all optional: factor A (a warning shows when someone has a pension premium at work and no factor A), last year's income from work (otherwise this year's is used), and unused room from earlier years (reserveringsruimte). Behind "Try another amount": a deposit to try (saved, example €1,000).
+- The option leads with the **honey spot** (Amir's idea, 27 September 2026): the deposit where each euro gives the most back, the largest on a tie. `honeySpot` in `engine/lijfrente.ts` checks the person's tax zones, where their tax reaches zero, where each toeslag starts going down and runs out (`toeslagRunOut`), one cent past every toeslag that drops at once, and all of the room; a grid of 16 steps is only a safety net. When a deposit gives back more than it costs (just under a kinderopvangtoeslag step), the page leads with that **free spot**: "your household keeps €X more, and the deposit goes to the pension", and says up to which amount the household still keeps at least as much.
+- Without last year's income, the page uses this year's. The tax when the lijfrente is paid out is not calculated; the page says it moves tax to later and the money is locked until the pension.
 - Worked example: alone, €38,880, €1,000 in: jaarruimte €5,912.40; box 1 tax €357.50 less (35.75%), general tax credit €63.98 more, zorgtoeslag €137.30 more: €558.78 back, so it costs €441.22.
 
 ## Test cases (must pass)
@@ -285,12 +286,14 @@ Lijfrente (see "Lijfrente 2026" above):
 - Jaarruimte: €5,912.40 at €38,880, €9,800.40 at €51,840, €3,530.40 with factor A €1,000, nothing with factor A €2,000, €35,588.40 above €137,800, nothing below the franchise, €8,912.40 with €10,000 side profit (profit before the zzp deductions).
 - €1,000 in: €558.78 back at €38,880 (€137.30 of it zorgtoeslag), €439.58 at €51,840, exactly €495 at €120,000 (49.50%, no tariefsaanpassing); only the part within the jaarruimte counts.
 - The lijfrente deduction lowers the room in the top bracket for the mortgage's tariefsaanpassing.
+- Last year's income €45,000 gives a jaarruimte of €7,748.40. Unused room from earlier years adds to the room, at most €42,753: at €38,880 with €10,000 the room is €15,912.40, and the honey spot is €9,144 (down to €29,736 each €100 gives €55.88, below it €35.75). With rent or children too, nothing in steps of €100 beats the honey spot.
 - Honey spot: the whole jaarruimte (€5,912.40, €55.88 of every €100) at €38,880; €1,574 at €80,000 (the top bracket part, €49.50 of every €100, then about €43.80); never beaten by any deposit in steps of €100. Free spot: a couple with two children in full time dagopvang, one earning €58,300: €116 in keeps the household more than €150 better off, and up to between €400 and €500 it keeps at least as much.
 
 Mortgage (see "Mortgage 2026" above):
 
 - Eigenwoningforfait: €1,400 at WOZ €400,000, €150 at €60,000, nil at €12,500, €8,250 at €1,500,000.
-- Wet Hillen: no mortgage and WOZ €400,000 adds €393.86 to the income.
+- Wet Hillen: no mortgage and WOZ €400,000 adds €393.86 to the income; with €300 erfpacht and no interest, only €1,100 × 28.133% is added.
+- Other home costs: €1,200 erfpacht on top of the worked example makes the saldo −€11,800 and saves €5,187.04 a year.
 - The worked example: €4,659.55 less tax; the labour tax credit does not change.
 - Top bracket: €120,000 salary and a saldo of −€17,900 save exactly 37.56% (€6,723.24), after a tariefsaanpassing of €2,137.26.
 - A couple where only one earns €51,840: all of the saldo with the earner (€4,659.55 less tax, not €2,329.77 for half each); equal earners keep half each; the division is never worse than any division in steps of 1%.
@@ -300,7 +303,7 @@ Toeslagen (see "Toeslagen 2026" above for the sources):
 - Zorgtoeslag: the card's maximum (€1,550.45 alone, €2,962.62 with toeslagpartner), €294.98 alone at €38,880, €1,707.15 for a couple with one earner at €38,880, €23.53 just at the €40,857 limit and nothing one euro above it.
 - Kindgebonden budget: the card's €5,996 and €8,576 for a single parent with one or two children, €2,580 per child for a couple, the age extras €724 and €964.
 - Kinderopvangtoeslag: 96% at €56,412 and 95.5% or 95.6% at €56,413; two children in full time dagopvang lose €216.96 a year at once at €58,185.
-- Huurtoeslag: €3,866.01 a year alone with €800 rent at €30,000 (not verified, see above).
+- Huurtoeslag: €3,866.01 a year alone with €800 rent at €30,000 (figures via search, see above).
 - Of the next €100, alone: €46.07 kept at €36,000 (income tax €40.20, zorgtoeslag €13.73); €44.32 at €38,880, because most of that €100 falls above the €38,883 bracket boundary.
 - The "worth it" chart: at €38,880 it gives the card's €44.32; at €40,800 only the 13.73% of the €57 up to the zorgtoeslag limit counts as lost toeslag, not the €23.53 that stops at once; two children in full time dagopvang at €57,000: the €216.96 step at €58,185, spread over its row from €56,413 to €58,184, is €12.24 of every €100.
 
@@ -315,7 +318,7 @@ Income tax:
 
 ## Milestones
 
-Stop after each one for review. Status on 26 September 2026: 1 to 5 and 7 are done, 6 is dropped, 8 is in progress: the mortgage and the lijfrente what-if are built, their assumptions wait for Amir's review.
+Stop after each one for review. Status on 26 September 2026: 1 to 5 and 7 are done, 6 is dropped, 8 is in progress: the mortgage and the lijfrente what-if are built and completed (27 September: interest from the statement, other home costs, last year's income, reserveringsruimte); the remaining assumptions are documented choices.
 
 The milestones were renumbered on 26 September 2026. Before that, the side income page was milestone 5, the "next €100" pages were 3 and 4, and 6 was the dropped payslip check.
 
@@ -330,7 +333,7 @@ The milestones were renumbered on 26 September 2026. Before that, the side incom
 
    Wide screens: inputs on the left, answers on the right. Each section gets a plain #anchor, so a link can point to one question. Saved inputs from the old pages carry over. The engine does not change. *Done:* the code is in `src/app/`. A person alone gets no heading or name field; names appear with a partner. The per-person card no longer repeats the set-aside note, the side income section has it. When both partners have side income there is nothing to compare, so the section shows each one's own and no chart. The old side income page's inputs carry over only when there are no household inputs, with the side income on the first person.
 6. ~~"Next €100" pages for one person and for a couple.~~ Dropped on 26 September 2026: with sliders and one page, dragging a salary already shows total netto growing and "of the next €100" changing for each partner. What is left, a chart across all incomes, moves to milestone 7.
-7. **Toeslagen.** Zorgtoeslag, huurtoeslag, kindgebonden budget and kinderopvangtoeslag on the combined household income. Every extra input is optional, with a sensible default: for example rent, children and their ages, childcare hours and costs, and savings for the asset test (vermogenstoets). Add "lost toeslag" as a third colour in the "next €100" bar, and show the armoedeval honestly where it occurs. Research the exact 2026 rules first, write them into this file like the tax rules above, and confirm them with Amir. Amir asked for all four at once (26 September 2026). *Done:* the rules are in "Toeslagen 2026" above, the engine in `engine/toeslagen.ts`, the inputs (children with age and optional childcare, rent, savings) in `ui/home-form.ts`, the section in `app/toeslagen.ts`. The saved inputs moved to version 3; version 2 carries over with an empty home. Still open: the huurtoeslag figures marked "not verified". The "Is working more worth it?" section (`app/worth-it.ts`) is a stacked area of kept, income tax and lost toeslag across all salaries, with a "you are here" dot; for a couple a toggle picks whose salary goes up, because the other partner's salary stays where it is. See "How the page uses toeslagen" for how it treats the drops at once.
+7. **Toeslagen.** Zorgtoeslag, huurtoeslag, kindgebonden budget and kinderopvangtoeslag on the combined household income. Every extra input is optional, with a sensible default: for example rent, children and their ages, childcare hours and costs, and savings for the asset test (vermogenstoets). Add "lost toeslag" as a third colour in the "next €100" bar, and show the armoedeval honestly where it occurs. Research the exact 2026 rules first, write them into this file like the tax rules above, and confirm them with Amir. Amir asked for all four at once (26 September 2026). *Done:* the rules are in "Toeslagen 2026" above, the engine in `engine/toeslagen.ts`, the inputs (children with age and optional childcare, rent, savings) in `ui/home-form.ts`, the section in `app/toeslagen.ts`. The saved inputs moved to version 3; version 2 carries over with an empty home. The huurtoeslag figures were rechecked by search on 27 September 2026 and agree across sources; reading them on the official page is still open. The "Is working more worth it?" section (`app/worth-it.ts`) is a stacked area of kept, income tax and lost toeslag across all salaries, with a "you are here" dot; for a couple a toggle picks whose salary goes up, because the other partner's salary stays where it is. See "How the page uses toeslagen" for how it treats the drops at once.
 8. **More optional parameters.** One at a time, add the items from "Not included" below that change the answer for many people, each as an optional input that is zero or off by default: mortgage (hypotheekrenteaftrek and eigenwoningforfait), a lijfrente what-if (a deposit lowers taxable income and the toetsingsinkomen for toeslagen), savings and investments in box 3, people at AOW age, special bonus rates, and for zzp'ers business losses, KOR and investment deductions. Explain each rule first, as always, and agree the order with Amir. *Mortgage done* (26 September 2026, built while Amir was away): inputs WOZ value, loan and rate in the home block, `engine/eigen-woning.ts`, the section in `app/mortgage.ts`, rules in "Mortgage 2026" above. Open: the assumptions in `docs/mortgage-2026.md`, and checking the figures on belastingdienst.nl. *Lijfrente done* (26 September 2026, Amir's choice: "options that could reduce tax, like lijfrente", in a what-if section): the section "What could lower your tax?" in `app/lower-tax.ts`, `engine/lijfrente.ts`, rules in "Lijfrente 2026" above, assumptions in `docs/lijfrente-2026.md`. The section is built to take more options, each with its own answer, inputs and "Show me why". The option now leads with the honey spot (27 September 2026, Amir's idea and choice: "best amount plus free spots", lijfrente only for now; Amir agreed that it means the most back per euro, and that for a couple it leads with one partner). Next option: to agree with Amir; gifts to charity (giften) were proposed.
 
 Dropped: ~~payslip check for two jobs~~. Two employers are rare in practice, and the set-aside question for zzp side income is answered in the side income section. The engine keeps `withholding.ts`.
@@ -339,6 +342,6 @@ Later ideas, not now: Dutch and Persian translations, and an explanation layer w
 
 ## Not included (show this on the page until added)
 
-Deductions besides the mortgage interest and a lijfrente, box 3 savings, reserveringsruimte for a lijfrente, special bonus rates, business losses, KOR and investment deductions, people at AOW age (until milestone 8). For the mortgage: erfpacht, the costs of taking out a mortgage, part of a year, and loans that do not count as eigenwoningschuld (shown in the "Mortgage" note). For toeslagen: other people living in the home besides the partner and children, and special situations. On salary the employer pays the Zvw health contribution; on side income the zzp'er pays it, and that is included.
+Deductions besides the own home and a lijfrente, box 3 savings, special bonus rates, business losses, KOR and investment deductions, people at AOW age (until milestone 8). For the mortgage: owning the home for part of the year, and loans that do not count as eigenwoningschuld (shown in the "Mortgage" note). For toeslagen: other people living in the home besides the partner and children, and special situations. On salary the employer pays the Zvw health contribution; on side income the zzp'er pays it, and that is included.
 
 The footer text is `common.notIncluded` in `src/i18n/en.ts`. Keep it and this list the same.

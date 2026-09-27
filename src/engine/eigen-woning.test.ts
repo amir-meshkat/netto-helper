@@ -41,3 +41,15 @@ describe("eigenWoning", () => {
     expect(eigenWoning({ woz: 400_000, interest: 1_000 }, rules).saldo).toBeCloseTo(400 * (1 - 0.71867), 6);
   });
 });
+
+describe("eigenWoning with other deductible costs", () => {
+  it("takes erfpacht and the costs of the mortgage off like interest: saldo -11,800 with 1,200 erfpacht", () => {
+    const w = eigenWoning({ woz: 400_000, interest: 12_000, costs: 1_200 }, rules);
+    expect(w.costs).toBe(1_200);
+    expect(w.saldo).toBeCloseTo(-11_800, 6);
+  });
+
+  it("counts the costs for the Wet Hillen too: only the forfait above interest and costs is taxed in part", () => {
+    expect(eigenWoning({ woz: 400_000, interest: 0, costs: 300 }, rules).saldo).toBeCloseTo(1_100 * (1 - 0.71867), 6);
+  });
+});
